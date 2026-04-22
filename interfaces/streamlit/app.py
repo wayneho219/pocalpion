@@ -1,3 +1,4 @@
+import dataclasses
 import streamlit as st
 from adapters.poke_api_repository import PokeApiRepository
 from adapters.csv_name_provider import CsvNameProvider
@@ -5,6 +6,7 @@ from application.calculator import StatCalculator
 from application.search_service import SearchService
 from application.speed_service import SpeedService
 from application.survival_service import SurvivalService
+from domain.models.nature import NatureRegistry
 from shared.config import CSV_PATH, CACHE_DIR
 
 st.set_page_config(page_title="Pokémon Champions 2026", layout="wide")
@@ -87,23 +89,28 @@ with tab_speed:
             tgt_nature_name = st.text_input("輸入性格名稱（中/英/日）", key="speed_tgt_nature_input")
 
     if st.button("計算超速 SP", key="speed_calc") and my_query and tgt_query:
-        from domain.models.nature import NatureRegistry
+        try:
+            my_nature  = NatureRegistry.get_by_name(my_nature_name)
+            tgt_nature = NatureRegistry.get_by_name(tgt_nature_name)
+        except ValueError as e:
+            st.error(f"無法識別的性格：{e}")
+            st.stop()
 
-        my_results  = svc["search"].search(my_query)
-        tgt_results = svc["search"].search(tgt_query)
+        with st.spinner("搜尋中..."):
+            my_results  = svc["search"].search(my_query)
+            tgt_results = svc["search"].search(tgt_query)
 
         if not my_results:
             st.error(f"找不到我方寶可夢：{my_query}")
         elif not tgt_results:
             st.error(f"找不到目標寶可夢：{tgt_query}")
         else:
-            import dataclasses
-            my_mon  = dataclasses.replace(my_results[0],  nature=NatureRegistry.get_by_name(my_nature_name))
-            tgt_mon = dataclasses.replace(tgt_results[0], nature=NatureRegistry.get_by_name(tgt_nature_name))
+            my_mon  = dataclasses.replace(my_results[0],  nature=my_nature)
+            tgt_mon = dataclasses.replace(tgt_results[0], nature=tgt_nature)
             result  = svc["speed"].min_sp_to_outspeed(my_mon, tgt_mon)
 
             st.divider()
-            if result.sp_needed == -1:
+            if result is None:
                 st.error(f"❌ 即使投入所有 SP，{my_mon.name_zh} 仍無法超越 {tgt_mon.name_zh}（速度差距過大）。")
             else:
                 st.success(f"✅ 需要 **SP_Speed = {result.sp_needed}** 點")
