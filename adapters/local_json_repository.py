@@ -31,8 +31,11 @@ class LocalJsonRepository(AbstractPokeRepository):
         self._by_zh:  dict[str, Pokemon] = {}
         self._by_ja:  dict[str, Pokemon] = {}
         self._all:    list[Pokemon]      = []
-        for raw in data:
-            p = _parse(raw)
+        for i, raw in enumerate(data):
+            try:
+                p = _parse(raw)
+            except (KeyError, TypeError) as exc:
+                raise ValueError(f"Bad record at index {i}: {exc}") from exc
             self._by_id[p.id]              = p
             self._by_en[p.name_en.lower()] = p
             self._by_zh[p.name_zh]         = p

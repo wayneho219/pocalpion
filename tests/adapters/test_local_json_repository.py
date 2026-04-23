@@ -61,3 +61,24 @@ class TestFuzzyMatch:
 
     def test_search_delegates_to_fuzzy_match(self, repo):
         assert repo.search("pikachu") == repo.fuzzy_match("pikachu")
+
+    def test_whitespace_only_query_returns_empty(self, repo):
+        assert repo.fuzzy_match("   ") == []
+
+
+class TestEdgeCases:
+    def test_get_by_name_strips_whitespace(self, repo):
+        assert repo.get_by_name("  garchomp  ").id == 445
+
+    def test_missing_sprite_path_defaults_to_empty_string(self):
+        import json, tempfile
+        from pathlib import Path
+        data = [{"id": 1, "name_en": "bulbasaur", "name_zh": "妙蛙種子", "name_ja": "フシギダネ",
+                 "types": ["grass"], "base_stats": {"hp": 45, "attack": 49, "defense": 49,
+                 "sp_attack": 65, "sp_defense": 65, "speed": 45}}]
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(data, f)
+            tmp = Path(f.name)
+        repo = LocalJsonRepository(tmp)
+        assert repo.get_by_id(1).sprite_url == ""
+        tmp.unlink()
