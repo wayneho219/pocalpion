@@ -1,0 +1,20 @@
+[
+  {
+    "id": 25,
+    "name_en": "pikachu",
+    "name_zh": "皮卡丘",
+    "name_ja": "ピカチュウ",
+    "types": ["electric"],
+    "base_stats": {"hp": 35, "attack": 55, "defense": 40, "sp_attack": 50, "sp_defense": 50, "speed": 90},
+    "sprite_path": "data/sprites/25.png"
+  },
+  {
+    "id": 445,
+    "name_en": "garchomp",
+    "name_zh": "烈咬陸鯊",
+    "name_ja": "ガブリアス",
+    "types": ["dragon", "ground"],
+    "base_stats": {"hp": 108, "attack": 130, "defense": 95, "sp_attack": 80, "sp_defense": 85, "speed": 102},
+    "sprite_path": "data/sprites/445.png"
+  }
+]
