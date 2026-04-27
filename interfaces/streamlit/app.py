@@ -37,6 +37,20 @@ with st.sidebar:
         st.query_params["lang"] = chosen
         st.rerun()
 
+    st.divider()
+    if st.button("🔄 " + t("data_update_button"), key="update_db"):
+        from scripts.build_data import build as _build
+        progress = st.progress(0.0, text=t("data_update_running_info"))
+
+        def _on_progress(current: int, total: int, name: str) -> None:
+            progress.progress(current / total, text=f"[{current}/{total}] {name}")
+
+        count = _build(on_progress=_on_progress)
+        progress.empty()
+        st.success(t("data_update_done").format(count=count))
+        build_services.clear()
+        st.rerun()
+
 
 @st.cache_resource
 def build_services() -> dict:
@@ -163,6 +177,10 @@ with tab_speed:
         )
         if tgt_nature_name == t("speed_nature_other"):
             tgt_nature_name = st.text_input(t("speed_nature_input"), key="speed_tgt_nature_input")
+        tgt_sp = int(st.number_input(
+            t("speed_tgt_sp_label"), min_value=0, max_value=32, value=0, step=1,
+            key="speed_tgt_sp",
+        ))
 
     if st.button(t("speed_button"), key="speed_calc") and my_query and tgt_query:
         try:
@@ -180,19 +198,47 @@ with tab_speed:
         elif not tgt_results:
             st.error(t("speed_tgt_not_found").format(name=tgt_query))
         else:
-            my_mon  = dataclasses.replace(my_results[0],  nature=my_nature)
-            tgt_mon = dataclasses.replace(tgt_results[0], nature=tgt_nature)
-            result  = svc["speed"].min_sp_to_outspeed(my_mon, tgt_mon)
+            st.session_state["_speed_my_id"]      = my_results[0].id
+            st.session_state["_speed_my_nature"]  = my_nature_name
+            st.session_state["_speed_tgt_id"]     = tgt_results[0].id
+            st.session_state["_speed_tgt_nature"] = tgt_nature_name
+
+    # Live result — re-renders whenever tgt_sp changes
+    if "_speed_my_id" in st.session_state:
+        try:
+            my_nature  = NatureRegistry.get_by_name(st.session_state["_speed_my_nature"])
+            tgt_nature = NatureRegistry.get_by_name(st.session_state["_speed_tgt_nature"])
+            my_mon  = dataclasses.replace(
+                svc["local"].get_by_id(st.session_state["_speed_my_id"]), nature=my_nature
+            )
+            tgt_mon = dataclasses.replace(
+                svc["local"].get_by_id(st.session_state["_speed_tgt_id"]), nature=tgt_nature
+            )
+
+            tgt_preview = svc["calc"].calc_stat(
+                tgt_mon.base_stats.speed, tgt_sp, tgt_mon.nature, BattleStat.SPEED
+            )
+            my_preview = svc["calc"].calc_stat(
+                my_mon.base_stats.speed, 0, my_mon.nature, BattleStat.SPEED
+            )
+
+            result = svc["speed"].min_sp_to_outspeed(my_mon, tgt_mon, target_sp=tgt_sp)
 
             st.divider()
+            preview_cols = st.columns(2)
+            preview_cols[0].caption(t("speed_my_preview").format(speed=my_preview))
+            preview_cols[1].caption(t("speed_tgt_preview").format(speed=tgt_preview))
+
             if result is None:
                 st.error(t("speed_cannot_outspeed").format(my=my_mon.name_zh, tgt=tgt_mon.name_zh))
             else:
                 st.success(t("speed_success").format(sp=result.sp_needed))
-                cols = st.columns(3)
-                cols[0].metric(t("speed_metric_sp"), result.sp_needed)
-                cols[1].metric(t("speed_metric_speed").format(name=my_mon.name_zh), result.my_speed)
-                cols[2].metric(t("speed_metric_speed").format(name=tgt_mon.name_zh), result.target_speed)
+                metric_cols = st.columns(3)
+                metric_cols[0].metric(t("speed_metric_sp"), result.sp_needed)
+                metric_cols[1].metric(t("speed_metric_speed").format(name=my_mon.name_zh), result.my_speed)
+                metric_cols[2].metric(t("speed_metric_speed").format(name=tgt_mon.name_zh), result.target_speed)
+        except Exception:
+            pass
 
 # ── Survival Tab ─────────────────────────────────────────────────────────────
 with tab_survival:
