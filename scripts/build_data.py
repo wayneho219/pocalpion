@@ -29,8 +29,8 @@ def _fetch_species_names(pid: int) -> dict:
     resp.raise_for_status()
     names = {n["language"]["name"]: n["name"] for n in resp.json()["names"]}
     return {
-        "name_zh": names.get("zh-Hant", names.get("zh-Hans", "")),
-        "name_ja": names.get("ja",      names.get("ja-Hrkt", "")),
+        "name_zh": names.get("zh-hant", names.get("zh-hans", "")),
+        "name_ja": names.get("ja",     names.get("ja-hrkt", "")),
     }
 
 
@@ -75,7 +75,10 @@ def build(
             stats     = {s["stat"]["name"]: s["base_stat"] for s in raw["stats"]}
             home      = (raw.get("sprites", {}).get("other", {}) or {}).get("home", {}) or {}
             sprite_url = home.get("front_default", "") or ""
-            downloaded = _download_sprite(sprite_url, sprite_path) if sprite_url else False
+            if sprite_path.exists():
+                downloaded = True
+            else:
+                downloaded = _download_sprite(sprite_url, sprite_path) if sprite_url else False
 
             entry = {
                 "id":       pid,
