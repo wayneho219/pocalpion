@@ -39,7 +39,7 @@ class PokemonDetailOut(BaseModel):
     types: list[str]
     base_stats: StatSetOut
     abilities: list[dict]
-    dream_ability: Optional[dict]
+    dream_ability: Optional[dict] = None
     mega_forms: list[dict]
     type_matchup: TypeMatchupOut
 
