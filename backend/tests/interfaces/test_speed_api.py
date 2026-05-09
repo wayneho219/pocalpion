@@ -49,3 +49,14 @@ def test_speed_invalid_nature_returns_404():
         "tgt_nature": "Hardy",
     })
     assert r.status_code == 404
+
+
+def test_speed_pokemon_not_found_returns_404():
+    r = client.post("/api/speed", json={
+        "my_pokemon_id": 99999,
+        "my_nature": "Hardy",
+        "my_modifier_mult": 1.0,
+        "tgt_pokemon_id": 9,
+        "tgt_nature": "Hardy",
+    })
+    assert r.status_code == 404
