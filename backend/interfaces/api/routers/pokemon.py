@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
 from interfaces.api.deps import get_services
+from shared.exceptions import PokemonNotFoundError
 from interfaces.api.schemas import (
     PokemonSearchOut, PokemonDetailOut, StatSetOut,
     TypeMatchupOut, TypeMatchupEntry,
@@ -44,7 +45,7 @@ def detail(pokemon_id: int):
     svc = get_services()
     try:
         p = svc["repo"].get_by_id(pokemon_id)
-    except Exception:
+    except PokemonNotFoundError:
         raise HTTPException(status_code=404, detail="Pokemon not found")
     return PokemonDetailOut(
         id=p.id,

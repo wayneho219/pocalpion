@@ -1,5 +1,4 @@
 # backend/tests/interfaces/test_pokemon_api.py
-import pytest
 from fastapi.testclient import TestClient
 from interfaces.api.main import app
 
@@ -16,6 +15,7 @@ def test_search_returns_results():
     assert "id" in first
     assert "name_zh" in first
     assert "name_en" in first
+    assert "name_ja" in first
     assert "types" in first
 
 
