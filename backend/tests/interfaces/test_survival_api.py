@@ -50,3 +50,15 @@ def test_survival_invalid_pokemon():
         "type_multiplier": 1.0,
     })
     assert r.status_code == 404
+
+
+def test_survival_invalid_nature():
+    r = client.post("/api/survival", json={
+        "pokemon_id": 6,
+        "nature": "FakeNature",
+        "power": 80,
+        "attacker_atk": 150,
+        "is_physical": True,
+        "type_multiplier": 1.0,
+    })
+    assert r.status_code == 404

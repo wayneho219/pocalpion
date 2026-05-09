@@ -4,12 +4,12 @@ from interfaces.api.deps import get_services
 from interfaces.api.schemas import SurvivalIn, SurvivalOut, SurvivalResultOut
 from domain.models.nature import NatureRegistry
 from shared.exceptions import PokemonNotFoundError
-from application.survival_service import AttackInput
+from application.survival_service import AttackInput, SurvivalResult
 
 router = APIRouter()
 
 
-def _to_out(r) -> SurvivalResultOut:
+def _to_out(r: SurvivalResult) -> SurvivalResultOut:
     return SurvivalResultOut(
         sp_hp=r.sp_hp,
         sp_def=r.sp_def,
