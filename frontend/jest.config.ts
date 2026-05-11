@@ -9,7 +9,7 @@ const config: Config = {
   transform: {
     "^.+\\.(ts|tsx)$": ["ts-jest", { tsconfig: { jsx: "react-jsx" } }],
   },
-  testMatch: ["**/__tests__/**/*.test.{ts,tsx}"],
+  testMatch: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
 };
 
 export default config;
