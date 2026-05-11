@@ -18,16 +18,17 @@ export function PokemonSelector({ id, label, lang, onSelect }: PokemonSelectorPr
   const timer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    if (query.trim().length === 0) { setResults([]); return; }
+    if (query.trim().length === 0) { setResults([]); setOpen(false); return; }
     clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
+    const id = setTimeout(async () => {
       try {
         const data = await api.searchPokemon(query.trim());
         setResults(data);
         setOpen(true);
       } catch { setResults([]); }
     }, 300);
-    return () => clearTimeout(timer.current);
+    timer.current = id;
+    return () => clearTimeout(id);
   }, [query]);
 
   const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
