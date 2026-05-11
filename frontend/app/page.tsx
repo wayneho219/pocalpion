@@ -39,13 +39,22 @@ export default function SearchPage() {
   const { t, lang } = useLang();
   const [pokemon, setPokemon] = useState<PokemonDetail | null>(null);
   const [abilityDesc, setAbilityDesc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const handleSelect = async (result: PokemonSearchResult) => {
     setAbilityDesc(null);
+    setFetchError(false);
+    setLoading(true);
     try {
       const detail = await api.getPokemon(result.id);
       setPokemon(detail);
-    } catch { /* ignore */ }
+    } catch {
+      setFetchError(true);
+      setPokemon(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
@@ -70,6 +79,13 @@ export default function SearchPage() {
         </svg>
         <PokemonSelector id="search-input" label="" lang={lang} onSelect={handleSelect} />
       </div>
+
+      {loading && (
+        <div className="text-center py-12 text-white/30 text-sm">載入中…</div>
+      )}
+      {fetchError && (
+        <div className="text-center py-12 text-red-400/70 text-sm">無法載入寶可夢資料</div>
+      )}
 
       {pokemon && (
         <>
@@ -114,7 +130,7 @@ export default function SearchPage() {
                   <div className="flex gap-2 flex-wrap">
                     {pokemon.abilities.map((ab, i) => (
                       <button
-                        key={i}
+                        key={(ab.name_en || ab.name_zh || String(i)) as string}
                         type="button"
                         onClick={() => setAbilityDesc(
                           (ab[`desc_${lang}`] || ab.desc_zh || "") as string
@@ -139,9 +155,16 @@ export default function SearchPage() {
                     )}
                   </div>
                   {abilityDesc && (
-                    <p className="mt-2 text-[12px] text-white/50 bg-white/5 rounded-lg px-3 py-2">
-                      {abilityDesc}
-                    </p>
+                    <div className="mt-2 flex items-start gap-2 bg-white/5 rounded-lg px-3 py-2">
+                      <p className="flex-1 text-[12px] text-white/50">{abilityDesc}</p>
+                      <button
+                        type="button"
+                        onClick={() => setAbilityDesc(null)}
+                        className="text-white/30 hover:text-white/60 text-[11px] shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -190,7 +213,7 @@ export default function SearchPage() {
                             style={{ color: MULT_COLORS[e.multiplier] ?? "#fff" }}
                             className="text-[13px] font-bold"
                           >
-                            {e.multiplier >= 1 ? `${e.multiplier}×` : `${e.multiplier}×`}
+                            {`${e.multiplier}×`}
                           </span>
                           <TypeBadge type={e.type} label={typeNames[e.type] ?? e.type} />
                         </span>
