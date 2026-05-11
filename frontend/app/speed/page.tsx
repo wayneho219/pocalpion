@@ -73,7 +73,7 @@ export default function SpeedPage() {
                 text-[12px] text-white/60 outline-none"
             >
               {MODIFIERS.map((m, i) => (
-                <option key={i} value={i}>{t(m.key)}</option>
+                <option key={m.key} value={i}>{t(m.key)}</option>
               ))}
             </select>
           </div>
@@ -96,7 +96,7 @@ export default function SpeedPage() {
                 text-[12px] text-white/60 outline-none"
             >
               {MODIFIERS.map((m, i) => (
-                <option key={i} value={i}>{t(m.key)}</option>
+                <option key={m.key} value={i}>{t(m.key)}</option>
               ))}
             </select>
           </div>
@@ -117,10 +117,10 @@ export default function SpeedPage() {
         <div className="mt-4 bg-gradient-to-r from-blue-500/12 to-purple-500/8
           border border-blue-400/28 rounded-xl px-5 py-4 flex items-center justify-between">
           <p className="text-[12px] text-white/40">
-            {loading ? "計算中…" : result === null
+            {loading ? t("calculating") : result === null
               ? t("speed_cannot_outspeed")
               : result === "error"
-                ? "錯誤"
+                ? t("error_generic")
                 : t("speed_result_label")}
           </p>
           {result && result !== "error" && result !== null && (

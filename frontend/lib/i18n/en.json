@@ -52,5 +52,7 @@
   "surv_total_sp": "Total EVs",
   "surv_impossible": "Cannot survive",
   "calc_button": "Calculate",
-  "data_update": "Update Data"
+  "data_update": "Update Data",
+  "calculating": "Calculating…",
+  "error_generic": "Error"
 }

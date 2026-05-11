@@ -52,5 +52,7 @@
   "surv_total_sp": "合計努力值",
   "surv_impossible": "無法生存",
   "calc_button": "計算",
-  "data_update": "更新資料"
+  "data_update": "更新資料",
+  "calculating": "計算中…",
+  "error_generic": "錯誤"
 }

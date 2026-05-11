@@ -52,5 +52,7 @@
   "surv_total_sp": "合計努力値",
   "surv_impossible": "耐えられない",
   "calc_button": "計算する",
-  "data_update": "データ更新"
+  "data_update": "データ更新",
+  "calculating": "計算中…",
+  "error_generic": "エラー"
 }
