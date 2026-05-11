@@ -43,10 +43,13 @@ export default function SurvivalPage() {
   const [result,  setResult]  = useState<SurvivalResult | null>(null);
   const [impossible, setImpossible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [calcError, setCalcError] = useState(false);
 
   const calc = async () => {
     if (!mon) return;
     setLoading(true);
+    setResult(null);
+    setCalcError(false);
     try {
       const r = await api.calcSurvival({
         pokemon_id: mon.id, nature,
@@ -56,8 +59,11 @@ export default function SurvivalPage() {
       });
       setImpossible(!r.prefer_hp.survived);
       setResult(r);
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
+    } catch {
+      setCalcError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -138,6 +144,12 @@ export default function SurvivalPage() {
       >
         {loading ? t("calculating") : t("calc_button")}
       </button>
+
+      {calcError && (
+        <div className="mt-4 text-center py-4 text-red-400/70 text-sm">
+          {t("error_generic")}
+        </div>
+      )}
 
       {/* Result */}
       {result && (
