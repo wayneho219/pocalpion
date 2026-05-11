@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import zh from "./zh.json";
 import en from "./en.json";
 import ja from "./ja.json";
@@ -7,6 +7,16 @@ import ja from "./ja.json";
 export type Lang = "zh" | "en" | "ja";
 const STRINGS: Record<Lang, Record<string, string>> = { zh, en, ja };
 const STORAGE_KEY = "poke_lang";
+const VALID_LANGS: Lang[] = ["zh", "en", "ja"];
+
+function resolveInitialLang(): Lang {
+  if (typeof window === "undefined") return "zh";
+  const param = new URLSearchParams(window.location.search).get("lang");
+  if (param && VALID_LANGS.includes(param as Lang)) return param as Lang;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored && VALID_LANGS.includes(stored as Lang)) return stored as Lang;
+  return "zh";
+}
 
 interface LangContextValue {
   lang: Lang;
@@ -21,14 +31,7 @@ const LangContext = createContext<LangContextValue>({
 });
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("zh");
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Lang | null;
-    const param = new URLSearchParams(window.location.search).get("lang") as Lang | null;
-    const resolved = param && ["zh", "en", "ja"].includes(param) ? param : stored ?? "zh";
-    setLangState(resolved as Lang);
-  }, []);
+  const [lang, setLangState] = useState<Lang>(resolveInitialLang);
 
   const setLang = (l: Lang) => {
     setLangState(l);
