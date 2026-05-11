@@ -54,5 +54,6 @@
   "calc_button": "計算",
   "data_update": "更新資料",
   "calculating": "計算中…",
-  "error_generic": "錯誤"
+  "error_generic": "錯誤",
+  "error_load_pokemon": "無法載入寶可夢資料"
 }

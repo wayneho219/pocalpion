@@ -54,5 +54,6 @@
   "calc_button": "Calculate",
   "data_update": "Update Data",
   "calculating": "Calculating…",
-  "error_generic": "Error"
+  "error_generic": "Error",
+  "error_load_pokemon": "Failed to load Pokémon data"
 }

@@ -54,5 +54,6 @@
   "calc_button": "計算する",
   "data_update": "データ更新",
   "calculating": "計算中…",
-  "error_generic": "エラー"
+  "error_generic": "エラー",
+  "error_load_pokemon": "ポケモンデータを読み込めませんでした"
 }

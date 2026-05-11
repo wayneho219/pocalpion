@@ -81,10 +81,10 @@ export default function SearchPage() {
       </div>
 
       {loading && (
-        <div className="text-center py-12 text-white/30 text-sm">載入中…</div>
+        <div className="text-center py-12 text-white/30 text-sm">{t("calculating")}</div>
       )}
       {fetchError && (
-        <div className="text-center py-12 text-red-400/70 text-sm">無法載入寶可夢資料</div>
+        <div className="text-center py-12 text-red-400/70 text-sm">{t("error_load_pokemon")}</div>
       )}
 
       {pokemon && (

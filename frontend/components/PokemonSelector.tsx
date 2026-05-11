@@ -20,15 +20,15 @@ export function PokemonSelector({ id, label, lang, onSelect }: PokemonSelectorPr
   useEffect(() => {
     if (query.trim().length === 0) { setResults([]); setOpen(false); return; }
     clearTimeout(timer.current);
-    const id = setTimeout(async () => {
+    const timerId = setTimeout(async () => {
       try {
         const data = await api.searchPokemon(query.trim());
         setResults(data);
         setOpen(true);
       } catch { setResults([]); }
     }, 300);
-    timer.current = id;
-    return () => clearTimeout(id);
+    timer.current = timerId;
+    return () => clearTimeout(timerId);
   }, [query]);
 
   const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
