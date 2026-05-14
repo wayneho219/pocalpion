@@ -5,6 +5,9 @@ import { api } from "@/lib/api";
 import type { PokemonSearchResult } from "@/lib/types";
 import { PokemonSelector } from "@/components/PokemonSelector";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const spriteUrl = (id: number) => `${API}/sprites/${id}.png`;
+
 const MODIFIERS = [
   { key: "speed_mod_scarf",     mult: 1.5 },
   { key: "speed_mod_tailwind",  mult: 2.0 },
@@ -24,7 +27,7 @@ function combinedMult(active: Set<string>): number {
 }
 
 function calcLiveSpeed(base: number, sp: number, natMult: number, modMult: number): number {
-  return Math.floor(Math.floor((base + 20 + sp) * natMult) * modMult);
+  return Math.floor(Math.floor((base + sp) * natMult) * modMult);
 }
 
 function toggle(set: Set<string>, key: string): Set<string> {
@@ -168,7 +171,12 @@ export default function SpeedPage() {
         {/* My */}
         <div className="bg-white/4 border border-white/8 rounded-xl p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] tracking-[2px] uppercase text-white/25">{t("speed_my_mon")}</p>
+            <div className="flex items-center gap-2">
+              {myMon && (
+                <img src={spriteUrl(myMon.id)} alt="" className="w-10 h-10 object-contain" />
+              )}
+              <p className="text-[10px] tracking-[2px] uppercase text-white/25">{t("speed_my_mon")}</p>
+            </div>
             {myLiveSpeed !== null && (
               <span className={`text-2xl font-extrabold tabular-nums leading-none ${myColor}`}>
                 {myLiveSpeed}
@@ -193,7 +201,12 @@ export default function SpeedPage() {
         {/* Target */}
         <div className="bg-white/4 border border-white/8 rounded-xl p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] tracking-[2px] uppercase text-white/25">{t("speed_tgt_mon")}</p>
+            <div className="flex items-center gap-2">
+              {tgtMon && (
+                <img src={spriteUrl(tgtMon.id)} alt="" className="w-10 h-10 object-contain" />
+              )}
+              <p className="text-[10px] tracking-[2px] uppercase text-white/25">{t("speed_tgt_mon")}</p>
+            </div>
             {tgtLiveSpeed !== null && (
               <span className={`text-2xl font-extrabold tabular-nums leading-none ${tgtColor}`}>
                 {tgtLiveSpeed}

@@ -64,11 +64,17 @@ export function PokemonSelector({ id, label, lang, onSelect }: PokemonSelectorPr
               <button
                 type="button"
                 onClick={() => handleSelect(p)}
-                className="w-full text-left px-4 py-2.5 text-sm text-white/80
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/80
                   hover:bg-white/8 transition-colors"
               >
-                {p[nameKey] as string}
-                <span className="ml-2 text-white/30 text-xs">#{p.id}</span>
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/sprites/${p.id}.png`}
+                  alt=""
+                  loading="lazy"
+                  className="w-7 h-7 object-contain shrink-0"
+                />
+                <span>{p[nameKey] as string}</span>
+                <span className="ml-auto text-white/30 text-xs">#{p.id}</span>
               </button>
             </li>
           ))}
