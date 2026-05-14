@@ -132,10 +132,10 @@ function CardHeader({ mon, detail, megaIdx, onMega, liveSpeed, speedColorClass, 
   return (
     <div className="flex items-start justify-between gap-2">
       <div className="flex flex-col gap-1.5">
-        <div className="h-10 flex items-center gap-2">
+        <div className="h-14 flex items-center gap-2">
           {imgUrl ? (
             <>
-              <img src={imgUrl} alt="" className="w-10 h-10 object-contain shrink-0" />
+              <img src={imgUrl} alt="" className="w-14 h-14 object-contain shrink-0" />
               <div className="flex flex-wrap gap-1">
                 {types.map(tp => (
                   <TypeBadge key={tp} type={tp} label={typeNames[tp] ?? tp} className="text-[10px] px-1.5 py-0.5" />
@@ -146,38 +146,40 @@ function CardHeader({ mon, detail, megaIdx, onMega, liveSpeed, speedColorClass, 
             <p className="text-[10px] tracking-[2px] uppercase text-white/25">{label}</p>
           )}
         </div>
-        {detail && detail.mega_forms.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            <button
-              type="button"
-              onClick={() => onMega(null)}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors
-                ${megaIdx === null
-                  ? "bg-amber-500/25 border-amber-400/50 text-amber-200"
-                  : "bg-white/4 border-white/10 text-white/40 hover:bg-white/8"
-                }`}
-            >
-              Base
-            </button>
-            {detail.mega_forms.map((mf, i) => (
+        <div className="flex flex-wrap gap-1 min-h-[22px]">
+          {detail && detail.mega_forms.length > 0 && (
+            <>
               <button
-                key={mf.suffix}
                 type="button"
-                onClick={() => onMega(i)}
+                onClick={() => onMega(null)}
                 className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors
-                  ${megaIdx === i
+                  ${megaIdx === null
                     ? "bg-amber-500/25 border-amber-400/50 text-amber-200"
                     : "bg-white/4 border-white/10 text-white/40 hover:bg-white/8"
                   }`}
               >
-                {megaLabel(mf.suffix)}
+                Base
               </button>
-            ))}
-          </div>
-        )}
+              {detail.mega_forms.map((mf, i) => (
+                <button
+                  key={mf.suffix}
+                  type="button"
+                  onClick={() => onMega(i)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors
+                    ${megaIdx === i
+                      ? "bg-amber-500/25 border-amber-400/50 text-amber-200"
+                      : "bg-white/4 border-white/10 text-white/40 hover:bg-white/8"
+                    }`}
+                >
+                  {megaLabel(mf.suffix)}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
       </div>
       {liveSpeed !== null && (
-        <span className={`text-2xl font-extrabold tabular-nums leading-none shrink-0 ${speedColorClass}`}>
+        <span className={`text-5xl font-extrabold tabular-nums leading-none shrink-0 ${speedColorClass}`}>
           {liveSpeed}
         </span>
       )}
