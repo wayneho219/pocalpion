@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 import { useLang, type Lang } from "@/lib/i18n";
 
 const LANGS: { value: Lang; label: string }[] = [
@@ -8,6 +9,51 @@ const LANGS: { value: Lang; label: string }[] = [
   { value: "en", label: "English" },
   { value: "ja", label: "日本語" },
 ];
+
+function LangDropdown({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-8 h-8 flex items-center justify-center rounded-md
+          text-white/40 hover:text-white/70 hover:bg-white/6 transition-colors text-[16px]"
+        aria-label="Language"
+      >
+        🌐
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 min-w-[120px]
+          bg-[#0f1420] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
+          {LANGS.map(l => (
+            <button
+              key={l.value}
+              onClick={() => { setLang(l.value); setOpen(false); }}
+              className={`w-full text-left px-4 py-2 text-[12px] transition-colors
+                ${lang === l.value
+                  ? "text-white bg-white/8"
+                  : "text-white/50 hover:text-white/80 hover:bg-white/5"
+                }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Nav() {
   const { t, lang, setLang } = useLang();
@@ -43,16 +89,7 @@ export function Nav() {
         ))}
       </div>
 
-      <select
-        value={lang}
-        onChange={(e) => setLang(e.target.value as Lang)}
-        className="bg-white/6 border border-white/10 rounded-md px-3 py-1
-          text-[12px] text-white/50 outline-none cursor-pointer"
-      >
-        {LANGS.map((l) => (
-          <option key={l.value} value={l.value}>{l.label}</option>
-        ))}
-      </select>
+      <LangDropdown lang={lang} setLang={setLang} />
     </nav>
   );
 }

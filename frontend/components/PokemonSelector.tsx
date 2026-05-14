@@ -16,8 +16,10 @@ export function PokemonSelector({ id, label, lang, onSelect }: PokemonSelectorPr
   const [results, setResults] = useState<PokemonSearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  const justSelected = useRef(false);
 
   useEffect(() => {
+    if (justSelected.current) { justSelected.current = false; return; }
     if (query.trim().length === 0) { setResults([]); setOpen(false); return; }
     clearTimeout(timer.current);
     const timerId = setTimeout(async () => {
@@ -34,6 +36,7 @@ export function PokemonSelector({ id, label, lang, onSelect }: PokemonSelectorPr
   const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
 
   const handleSelect = (p: PokemonSearchResult) => {
+    justSelected.current = true;
     setQuery(p[nameKey] as string);
     setOpen(false);
     onSelect(p);

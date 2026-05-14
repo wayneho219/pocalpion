@@ -73,6 +73,37 @@ interface ModToggleGroupProps {
   t: (k: string) => string;
 }
 
+function SpEvInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [draft, setDraft] = useState(String(value));
+  const clamp = (n: number) => Math.max(0, Math.min(32, n));
+
+  useEffect(() => { setDraft(String(value)); }, [value]);
+
+  const commitDraft = () => {
+    const n = clamp(Number(draft));
+    setDraft(String(n));
+    onChange(n);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="text" inputMode="numeric" value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commitDraft}
+        onKeyDown={(e) => { if (e.key === "Enter") commitDraft(); }}
+        className="w-14 bg-white/4 border border-white/8 rounded-lg px-2 py-2
+          text-[12px] text-white outline-none text-center shrink-0 [color-scheme:dark]"
+      />
+      <input
+        type="range" min={0} max={32} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="flex-1 accent-blue-400 cursor-pointer"
+      />
+    </div>
+  );
+}
+
 function ModToggleGroup({ active, onChange, t }: ModToggleGroupProps) {
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -155,12 +186,7 @@ export default function SpeedPage() {
           </div>
           <div>
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("speed_my_sp_label")}</p>
-            <input
-              type="number" min={0} max={32} value={mySpEv}
-              onChange={(e) => setMySpEv(Number(e.target.value))}
-              className="w-full bg-white/4 border border-white/8 rounded-lg px-3 py-2
-                text-[12px] text-white outline-none"
-            />
+            <SpEvInput value={mySpEv} onChange={setMySpEv} />
           </div>
         </div>
 
@@ -185,12 +211,7 @@ export default function SpeedPage() {
           </div>
           <div>
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("speed_tgt_sp_label")}</p>
-            <input
-              type="number" min={0} max={32} value={tgtSp}
-              onChange={(e) => setTgtSp(Number(e.target.value))}
-              className="w-full bg-white/4 border border-white/8 rounded-lg px-3 py-2
-                text-[12px] text-white outline-none"
-            />
+            <SpEvInput value={tgtSp} onChange={setTgtSp} />
           </div>
         </div>
       </div>
