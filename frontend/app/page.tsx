@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PokemonDetail, PokemonSearchResult } from "@/lib/types";
+import { useScreenshot } from "@/lib/screenshot-context";
+import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { TypeBadge } from "@/components/TypeBadge";
 import { TYPE_NAME } from "@/lib/type-names";
@@ -26,6 +28,7 @@ const MULT_COLORS: Record<number, string> = {
 export default function SearchPage() {
   const { t, lang } = useLang();
   const [pokemon, setPokemon] = useState<PokemonDetail | null>(null);
+  const [selectedResult, setSelectedResult] = useState<PokemonSearchResult | null>(null);
   const [megaIdx, setMegaIdx] = useState<number | null>(null);
   const [selectedAbilityKey, setSelectedAbilityKey] = useState<"mega" | "dream" | number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,6 +39,7 @@ export default function SearchPage() {
     setFetchError(false);
     setMegaIdx(null);
     setLoading(true);
+    setSelectedResult(result);
     try {
       const detail = await api.getPokemon(result.id);
       setPokemon(detail);
@@ -46,6 +50,18 @@ export default function SearchPage() {
       setLoading(false);
     }
   };
+
+  const { registerHandlers } = useScreenshot();
+  useEffect(() => {
+    const toResult = (c: Candidate): PokemonSearchResult => ({
+      id: c.id, name_en: c.name_en, name_zh: c.name_zh, name_ja: c.name_ja, types: c.types,
+    });
+    registerHandlers(
+      (c) => handleSelect(toResult(c)),
+      (c) => handleSelect(toResult(c)),
+    );
+    return () => registerHandlers(null, null);
+  }, [registerHandlers]);
 
   useEffect(() => {
     if (!pokemon) { setSelectedAbilityKey(null); return; }
@@ -98,7 +114,7 @@ export default function SearchPage() {
           stroke="currentColor" strokeWidth={2.5}>
           <circle cx={11} cy={11} r={7} /><path d="M21 21l-4.35-4.35" />
         </svg>
-        <PokemonSelector id="search-input" label="" lang={lang} onSelect={handleSelect} />
+        <PokemonSelector id="search-input" label="" lang={lang} onSelect={handleSelect} value={selectedResult} />
       </div>
 
       {loading && (

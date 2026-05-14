@@ -9,9 +9,10 @@ interface PokemonSelectorProps {
   label: string;
   lang: Lang;
   onSelect: (p: PokemonSearchResult) => void;
+  value?: PokemonSearchResult | null;
 }
 
-export function PokemonSelector({ id, label, lang, onSelect }: PokemonSelectorProps) {
+export function PokemonSelector({ id, label, lang, onSelect, value }: PokemonSelectorProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PokemonSearchResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -34,6 +35,11 @@ export function PokemonSelector({ id, label, lang, onSelect }: PokemonSelectorPr
   }, [query]);
 
   const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
+
+  useEffect(() => {
+    if (value) setQuery(value[nameKey] as string);
+    else setQuery("");
+  }, [value, nameKey]);
 
   const handleSelect = (p: PokemonSearchResult) => {
     justSelected.current = true;

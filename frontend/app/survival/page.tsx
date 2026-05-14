@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PokemonSearchResult, SurvivalResult, SurvivalPlan } from "@/lib/types";
+import { useScreenshot } from "@/lib/screenshot-context";
+import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { NatureSelector } from "@/components/NatureSelector";
 
@@ -45,6 +47,15 @@ export default function SurvivalPage() {
   const [loading, setLoading] = useState(false);
   const [calcError, setCalcError] = useState(false);
 
+  const { registerHandlers } = useScreenshot();
+  useEffect(() => {
+    const toResult = (c: Candidate): PokemonSearchResult => ({
+      id: c.id, name_en: c.name_en, name_zh: c.name_zh, name_ja: c.name_ja, types: c.types,
+    });
+    registerHandlers((c) => setMon(toResult(c)), null);
+    return () => registerHandlers(null, null);
+  }, [registerHandlers]);
+
   const calc = async () => {
     if (!mon) return;
     setLoading(true);
@@ -76,7 +87,7 @@ export default function SurvivalPage() {
         {/* Defender */}
         <div className="bg-white/4 border border-white/8 rounded-xl p-5 flex flex-col gap-3">
           <p className="text-[10px] tracking-[2px] uppercase text-white/25">{t("surv_my_mon")}</p>
-          <PokemonSelector id="surv-mon" label={t("surv_name_label")} lang={lang} onSelect={setMon} />
+          <PokemonSelector id="surv-mon" label={t("surv_name_label")} lang={lang} onSelect={setMon} value={mon} />
           <div>
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("surv_nature_label")}</p>
             <NatureSelector lang={lang} value={nature} onChange={setNature} />

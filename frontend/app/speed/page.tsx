@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PokemonSearchResult, PokemonDetail } from "@/lib/types";
+import { useScreenshot } from "@/lib/screenshot-context";
+import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { TypeBadge } from "@/components/TypeBadge";
 import { TYPE_NAME } from "@/lib/type-names";
@@ -203,6 +205,18 @@ export default function SpeedPage() {
   const [mySpEv,  setMySpEv]  = useState(0);
   const [tgtSp,   setTgtSp]   = useState(0);
 
+  const { registerHandlers } = useScreenshot();
+  useEffect(() => {
+    const toResult = (c: Candidate): PokemonSearchResult => ({
+      id: c.id, name_en: c.name_en, name_zh: c.name_zh, name_ja: c.name_ja, types: c.types,
+    });
+    registerHandlers(
+      (c) => { setMyMon(toResult(c)); setMyMegaIdx(null); },
+      (c) => { setTgtMon(toResult(c)); setTgtMegaIdx(null); },
+    );
+    return () => registerHandlers(null, null);
+  }, [registerHandlers]);
+
   useEffect(() => {
     if (!myMon) { setMyDetail(null); setMyMegaIdx(null); return; }
     api.getPokemon(myMon.id).then(d => { setMyDetail(d); setMyMegaIdx(null); }).catch(() => {});
@@ -237,7 +251,7 @@ export default function SpeedPage() {
             speedColorClass={speedColor(myLiveSpeed, tgtLiveSpeed)}
             label={t("speed_my_mon")} lang={lang}
           />
-          <PokemonSelector id="speed-my" label={t("speed_name_label")} lang={lang} onSelect={setMyMon} />
+          <PokemonSelector id="speed-my" label={t("speed_name_label")} lang={lang} onSelect={setMyMon} value={myMon} />
           <div>
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("speed_nature_label")}</p>
             <NatToggle value={myNatMult} onChange={setMyNatMult} t={t} />
@@ -261,7 +275,7 @@ export default function SpeedPage() {
             speedColorClass={speedColor(tgtLiveSpeed, myLiveSpeed)}
             label={t("speed_tgt_mon")} lang={lang}
           />
-          <PokemonSelector id="speed-tgt" label={t("speed_name_label")} lang={lang} onSelect={setTgtMon} />
+          <PokemonSelector id="speed-tgt" label={t("speed_name_label")} lang={lang} onSelect={setTgtMon} value={tgtMon} />
           <div>
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("speed_nature_label")}</p>
             <NatToggle value={tgtNatMult} onChange={setTgtNatMult} t={t} />
