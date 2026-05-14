@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PokemonDetail, PokemonSearchResult } from "@/lib/types";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { TypeBadge } from "@/components/TypeBadge";
+import { TYPE_NAME } from "@/lib/type-names";
 import { StatBar } from "@/components/StatBar";
 import { PokemonRadarChart } from "@/components/RadarChart";
 
@@ -17,19 +18,6 @@ const STAT_COLORS: Record<string, string> = {
   speed:      "linear-gradient(90deg,#3b82f6,#93c5fd)",
 };
 
-const TYPE_NAME: Record<string, Record<string, string>> = {
-  zh: { normal:"一般",fighting:"格鬥",flying:"飛行",poison:"毒",ground:"地面",rock:"岩石",
-        bug:"蟲",ghost:"幽靈",steel:"鋼",fire:"火",water:"水",grass:"草",
-        electric:"電",psychic:"超能力",ice:"冰",dragon:"龍",dark:"惡",fairy:"妖精" },
-  en: { normal:"Normal",fighting:"Fighting",flying:"Flying",poison:"Poison",ground:"Ground",
-        rock:"Rock",bug:"Bug",ghost:"Ghost",steel:"Steel",fire:"Fire",water:"Water",
-        grass:"Grass",electric:"Electric",psychic:"Psychic",ice:"Ice",dragon:"Dragon",
-        dark:"Dark",fairy:"Fairy" },
-  ja: { normal:"ノーマル",fighting:"かくとう",flying:"ひこう",poison:"どく",ground:"じめん",
-        rock:"いわ",bug:"むし",ghost:"ゴースト",steel:"はがね",fire:"ほのお",water:"みず",
-        grass:"くさ",electric:"でんき",psychic:"エスパー",ice:"こおり",dragon:"ドラゴン",
-        dark:"あく",fairy:"フェアリー" },
-};
 
 const MULT_COLORS: Record<number, string> = {
   4: "#ef4444", 2: "#f97316", 0.5: "#60a5fa", 0.25: "#3b82f6",
@@ -38,13 +26,15 @@ const MULT_COLORS: Record<number, string> = {
 export default function SearchPage() {
   const { t, lang } = useLang();
   const [pokemon, setPokemon] = useState<PokemonDetail | null>(null);
-  const [abilityDesc, setAbilityDesc] = useState<string | null>(null);
+  const [megaIdx, setMegaIdx] = useState<number | null>(null);
+  const [selectedAbilityKey, setSelectedAbilityKey] = useState<"mega" | "dream" | number | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
 
   const handleSelect = async (result: PokemonSearchResult) => {
-    setAbilityDesc(null);
+    setSelectedAbilityKey(null);
     setFetchError(false);
+    setMegaIdx(null);
     setLoading(true);
     try {
       const detail = await api.getPokemon(result.id);
@@ -57,8 +47,39 @@ export default function SearchPage() {
     }
   };
 
+  useEffect(() => {
+    if (!pokemon) { setSelectedAbilityKey(null); return; }
+    if (megaIdx !== null) setSelectedAbilityKey("mega");
+    else if (pokemon.abilities.length > 0) setSelectedAbilityKey(0);
+    else if (pokemon.dream_ability) setSelectedAbilityKey("dream");
+    else setSelectedAbilityKey(null);
+  }, [pokemon, megaIdx]);
+
   const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
   const typeNames = TYPE_NAME[lang] ?? TYPE_NAME.zh;
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const activeForm = pokemon && megaIdx !== null ? pokemon.mega_forms[megaIdx] : null;
+  const displayTypes      = activeForm ? activeForm.types      : pokemon?.types;
+  const displayStats      = activeForm ? activeForm.base_stats : pokemon?.base_stats;
+  const displayTypeMatchup = activeForm ? activeForm.type_matchup : pokemon?.type_matchup;
+  const abilityDesc: string | null = (() => {
+    if (!pokemon || selectedAbilityKey === null) return null;
+    if (selectedAbilityKey === "mega" && activeForm?.ability)
+      return (activeForm.ability[`desc_${lang}`] || activeForm.ability.desc_zh || "") as string;
+    if (selectedAbilityKey === "dream" && pokemon.dream_ability)
+      return (pokemon.dream_ability[`desc_${lang}`] || pokemon.dream_ability.desc_zh || "") as string;
+    if (typeof selectedAbilityKey === "number") {
+      const ab = pokemon.abilities[selectedAbilityKey];
+      if (ab) return (ab[`desc_${lang}`] || ab.desc_zh || "") as string;
+    }
+    return null;
+  })();
+  const displaySpriteUrl  = activeForm
+    ? `${API_URL}/sprites/mega/${pokemon!.id}-${activeForm.suffix}.png`
+    : pokemon ? `${API_URL}/sprites/${pokemon.id}.png` : null;
+  const megaLabel = (suffix: string) =>
+    suffix.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
   const statLabels: Record<string, string> = {
     hp: t("stat_hp"), attack: t("stat_attack"), defense: t("stat_defense"),
@@ -97,7 +118,7 @@ export default function SearchPage() {
                 bg-gradient-radial from-orange-500/16 to-transparent
                 flex items-center justify-center overflow-hidden">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/sprites/${pokemon.id}.png`}
+                  src={displaySpriteUrl ?? ""}
                   alt={pokemon[nameKey]}
                   className="w-32 h-32 object-contain"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
@@ -106,10 +127,39 @@ export default function SearchPage() {
               <p className="text-[17px] font-bold text-white">{pokemon[nameKey]}</p>
               <p className="text-[11px] text-white/28">{pokemon.name_ja}</p>
               <div className="flex gap-1.5 flex-wrap justify-center">
-                {pokemon.types.map((tp) => (
+                {displayTypes?.map((tp) => (
                   <TypeBadge key={tp} type={tp} label={typeNames[tp] ?? tp} />
                 ))}
               </div>
+              {pokemon.mega_forms.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 justify-center mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setMegaIdx(null)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors
+                      ${megaIdx === null
+                        ? "bg-amber-500/25 border-amber-400/50 text-amber-200"
+                        : "bg-white/4 border-white/10 text-white/45 hover:bg-white/8"
+                      }`}
+                  >
+                    Base
+                  </button>
+                  {pokemon.mega_forms.map((mf, i) => (
+                    <button
+                      key={mf.suffix}
+                      type="button"
+                      onClick={() => setMegaIdx(i)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors
+                        ${megaIdx === i
+                          ? "bg-amber-500/25 border-amber-400/50 text-amber-200"
+                          : "bg-white/4 border-white/10 text-white/45 hover:bg-white/8"
+                        }`}
+                    >
+                      {megaLabel(mf.suffix)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Info */}
@@ -122,48 +172,62 @@ export default function SearchPage() {
               </p>
 
               {/* Abilities */}
-              {(pokemon.abilities.length > 0 || pokemon.dream_ability) && (
+              {(activeForm ? activeForm.ability : (pokemon.abilities.length > 0 || pokemon.dream_ability)) && (
                 <div>
                   <p className="text-[10px] font-bold tracking-[2px] uppercase text-white/22 mb-2">
                     {t("detail_abilities")}
                   </p>
                   <div className="flex gap-2 flex-wrap">
-                    {pokemon.abilities.map((ab, i) => (
-                      <button
-                        key={(ab.name_en || ab.name_zh || String(i)) as string}
-                        type="button"
-                        onClick={() => setAbilityDesc(
-                          (ab[`desc_${lang}`] || ab.desc_zh || "") as string
+                    {activeForm ? (
+                      activeForm.ability && (
+                        <button
+                          key={(activeForm.ability[`name_${lang}`] || activeForm.ability.name_zh) as string}
+                          type="button"
+                          onClick={() => setSelectedAbilityKey("mega")}
+                          className={`rounded-lg px-3 py-1.5 text-[12px] border transition-colors
+                            ${selectedAbilityKey === "mega"
+                              ? "bg-blue-500/25 border-blue-400/60 text-blue-100 font-semibold shadow-[0_0_0_1px_rgba(96,165,250,0.3)]"
+                              : "bg-white/5 border-white/9 text-white/50 hover:bg-white/10 hover:text-white/70"
+                            }`}
+                        >
+                          {(activeForm.ability[`name_${lang}`] || activeForm.ability.name_zh) as string}
+                        </button>
+                      )
+                    ) : (
+                      <>
+                        {pokemon.abilities.map((ab, i) => (
+                          <button
+                            key={(ab.name_en || ab.name_zh || String(i)) as string}
+                            type="button"
+                            onClick={() => setSelectedAbilityKey(i)}
+                            className={`rounded-lg px-3 py-1.5 text-[12px] border transition-colors
+                              ${selectedAbilityKey === i
+                                ? "bg-blue-500/25 border-blue-400/60 text-blue-100 font-semibold shadow-[0_0_0_1px_rgba(96,165,250,0.3)]"
+                                : "bg-white/5 border-white/9 text-white/50 hover:bg-white/10 hover:text-white/70"
+                              }`}
+                          >
+                            {(ab[`name_${lang}`] || ab.name_zh) as string}
+                          </button>
+                        ))}
+                        {pokemon.dream_ability && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAbilityKey("dream")}
+                            className={`rounded-lg px-3 py-1.5 text-[12px] border transition-colors
+                              ${selectedAbilityKey === "dream"
+                                ? "bg-amber-500/30 border-amber-400/70 text-amber-100 font-semibold shadow-[0_0_0_1px_rgba(251,191,36,0.3)]"
+                                : "bg-amber-500/7 border-amber-400/30 text-amber-400/70 hover:bg-amber-500/15 hover:text-amber-300"
+                              }`}
+                          >
+                            ★ {(pokemon.dream_ability[`name_${lang}`] || pokemon.dream_ability.name_zh) as string}
+                          </button>
                         )}
-                        className="bg-white/5 border border-white/9 rounded-lg px-3 py-1.5
-                          text-[12px] text-white/60 hover:bg-white/10 transition-colors"
-                      >
-                        {(ab[`name_${lang}`] || ab.name_zh) as string}
-                      </button>
-                    ))}
-                    {pokemon.dream_ability && (
-                      <button
-                        type="button"
-                        onClick={() => setAbilityDesc(
-                          (pokemon.dream_ability![`desc_${lang}`] || pokemon.dream_ability!.desc_zh || "") as string
-                        )}
-                        className="bg-amber-500/7 border border-amber-400/40 rounded-lg px-3 py-1.5
-                          text-[12px] text-amber-300 hover:bg-amber-500/15 transition-colors"
-                      >
-                        ★ {(pokemon.dream_ability[`name_${lang}`] || pokemon.dream_ability.name_zh) as string}
-                      </button>
+                      </>
                     )}
                   </div>
                   {abilityDesc && (
-                    <div className="mt-2 flex items-start gap-2 bg-white/5 rounded-lg px-3 py-2">
-                      <p className="flex-1 text-[12px] text-white/50">{abilityDesc}</p>
-                      <button
-                        type="button"
-                        onClick={() => setAbilityDesc(null)}
-                        className="text-white/30 hover:text-white/60 text-[11px] shrink-0"
-                      >
-                        ✕
-                      </button>
+                    <div className="mt-2 bg-white/5 rounded-lg px-3 py-2">
+                      <p className="text-[12px] text-white/55 leading-relaxed">{abilityDesc}</p>
                     </div>
                   )}
                 </div>
@@ -175,7 +239,7 @@ export default function SearchPage() {
                   <StatBar
                     key={k}
                     label={statLabels[k]}
-                    value={pokemon.base_stats[k]}
+                    value={displayStats?.[k] ?? 0}
                     color={STAT_COLORS[k]}
                   />
                 ))}
@@ -186,9 +250,9 @@ export default function SearchPage() {
           {/* Radar */}
           <div className="mt-4 bg-white/4 border border-white/8 rounded-2xl p-5">
             <PokemonRadarChart
-              base={pokemon.base_stats}
+              base={displayStats ?? pokemon.base_stats}
               labels={statLabels}
-              baseLabel={pokemon[nameKey]}
+              baseLabel={activeForm ? megaLabel(activeForm.suffix) : pokemon[nameKey]}
             />
           </div>
 
@@ -198,7 +262,7 @@ export default function SearchPage() {
               {t("detail_type_matchup")}
             </p>
             {(["weaknesses", "resistances", "immunities"] as const).map((category) => {
-              const items = pokemon.type_matchup[category];
+              const items = displayTypeMatchup?.[category];
               if (!items || items.length === 0) return null;
               return (
                 <div key={category} className="flex items-center gap-2 flex-wrap mb-2.5">

@@ -3,7 +3,7 @@ from interfaces.api.deps import get_services
 from shared.exceptions import PokemonNotFoundError
 from interfaces.api.schemas import (
     PokemonSearchOut, PokemonDetailOut, StatSetOut,
-    TypeMatchupOut, TypeMatchupEntry,
+    TypeMatchupOut, TypeMatchupEntry, MegaFormOut,
 )
 from shared.type_chart import get_matchups
 
@@ -63,6 +63,19 @@ def detail(pokemon_id: int):
         ),
         abilities=p.abilities,
         dream_ability=p.dream_ability,
-        mega_forms=p.mega_forms,
+        mega_forms=[
+            MegaFormOut(
+                suffix=mf["suffix"],
+                name_zh=mf.get("name_zh", ""),
+                name_en=mf.get("name_en", ""),
+                name_ja=mf.get("name_ja", ""),
+                types=mf["types"],
+                base_stats=StatSetOut(**mf["base_stats"]),
+                ability=mf.get("ability"),
+                sprite_path=mf.get("sprite_path", ""),
+                type_matchup=_build_matchup(mf["types"]),
+            )
+            for mf in p.mega_forms
+        ],
         type_matchup=_build_matchup(list(p.types)),
     )

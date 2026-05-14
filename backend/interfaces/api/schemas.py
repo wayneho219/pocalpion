@@ -31,6 +31,18 @@ class PokemonSearchOut(BaseModel):
     types: list[str]
 
 
+class MegaFormOut(BaseModel):
+    suffix: str
+    name_zh: str
+    name_en: str
+    name_ja: str
+    types: list[str]
+    base_stats: StatSetOut
+    ability: Optional[dict] = None
+    sprite_path: str
+    type_matchup: TypeMatchupOut
+
+
 class PokemonDetailOut(BaseModel):
     id: int
     name_zh: str
@@ -40,7 +52,7 @@ class PokemonDetailOut(BaseModel):
     base_stats: StatSetOut
     abilities: list[dict]
     dream_ability: Optional[dict] = None
-    mega_forms: list[dict]
+    mega_forms: list[MegaFormOut]
     type_matchup: TypeMatchupOut
 
 

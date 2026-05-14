@@ -2,11 +2,22 @@
 import { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import type { PokemonSearchResult } from "@/lib/types";
+import type { PokemonSearchResult, PokemonDetail } from "@/lib/types";
 import { PokemonSelector } from "@/components/PokemonSelector";
+import { TypeBadge } from "@/components/TypeBadge";
+import { TYPE_NAME } from "@/lib/type-names";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const spriteUrl = (id: number) => `${API}/sprites/${id}.png`;
+
+function spriteUrl(id: number, suffix?: string): string {
+  return suffix
+    ? `${API}/sprites/mega/${id}-${suffix}.png`
+    : `${API}/sprites/${id}.png`;
+}
+
+function megaLabel(suffix: string): string {
+  return suffix.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
 
 const MODIFIERS = [
   { key: "speed_mod_scarf",     mult: 1.5 },
@@ -43,26 +54,16 @@ function speedColor(self: number | null, other: number | null): string {
   return "text-yellow-300";
 }
 
-interface NatToggleProps {
-  value: number;
-  onChange: (mult: number) => void;
-  t: (k: string) => string;
-}
-
-function NatToggle({ value, onChange, t }: NatToggleProps) {
+function NatToggle({ value, onChange, t }: { value: number; onChange: (m: number) => void; t: (k: string) => string }) {
   return (
     <div className="flex gap-1.5">
       {NAT_OPTIONS.map(o => (
-        <button
-          key={o.key}
-          type="button"
-          onClick={() => onChange(o.mult)}
+        <button key={o.key} type="button" onClick={() => onChange(o.mult)}
           className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-colors border
             ${value === o.mult
               ? "bg-blue-500/25 border-blue-400/50 text-blue-200"
               : "bg-white/4 border-white/10 text-white/45 hover:bg-white/8 hover:text-white/65"
-            }`}
-        >
+            }`}>
           {t(o.key)}
         </button>
       ))}
@@ -70,36 +71,40 @@ function NatToggle({ value, onChange, t }: NatToggleProps) {
   );
 }
 
-interface ModToggleGroupProps {
-  active: Set<string>;
-  onChange: (next: Set<string>) => void;
-  t: (k: string) => string;
+function ModToggleGroup({ active, onChange, t }: { active: Set<string>; onChange: (s: Set<string>) => void; t: (k: string) => string }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {MODIFIERS.map(m => {
+        const on = active.has(m.key);
+        return (
+          <button key={m.key} type="button" onClick={() => onChange(toggle(active, m.key))}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border
+              ${on
+                ? "bg-blue-500/25 border-blue-400/50 text-blue-200"
+                : "bg-white/4 border-white/10 text-white/45 hover:bg-white/8 hover:text-white/65"
+              }`}>
+            {t(m.key)}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function SpEvInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [draft, setDraft] = useState(String(value));
   const clamp = (n: number) => Math.max(0, Math.min(32, n));
-
   useEffect(() => { setDraft(String(value)); }, [value]);
-
-  const commitDraft = () => {
-    const n = clamp(Number(draft));
-    setDraft(String(n));
-    onChange(n);
-  };
-
+  const commit = () => { const n = clamp(Number(draft)); setDraft(String(n)); onChange(n); };
   return (
     <div className="flex items-center gap-2">
-      <input
-        type="text" inputMode="numeric" value={draft}
+      <input type="text" inputMode="numeric" value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={commitDraft}
-        onKeyDown={(e) => { if (e.key === "Enter") commitDraft(); }}
+        onBlur={commit} onKeyDown={(e) => { if (e.key === "Enter") commit(); }}
         className="w-14 bg-white/4 border border-white/8 rounded-lg px-2 py-2
           text-[12px] text-white outline-none text-center shrink-0 [color-scheme:dark]"
       />
-      <input
-        type="range" min={0} max={32} value={value}
+      <input type="range" min={0} max={32} value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="flex-1 accent-blue-400 cursor-pointer"
       />
@@ -107,26 +112,75 @@ function SpEvInput({ value, onChange }: { value: number; onChange: (v: number) =
   );
 }
 
-function ModToggleGroup({ active, onChange, t }: ModToggleGroupProps) {
+interface CardHeaderProps {
+  mon: PokemonSearchResult | null;
+  detail: PokemonDetail | null;
+  megaIdx: number | null;
+  onMega: (idx: number | null) => void;
+  liveSpeed: number | null;
+  speedColorClass: string;
+  label: string;
+  lang: string;
+}
+
+function CardHeader({ mon, detail, megaIdx, onMega, liveSpeed, speedColorClass, label, lang }: CardHeaderProps) {
+  const activeForm = detail && megaIdx !== null ? detail.mega_forms[megaIdx] : null;
+  const types  = activeForm ? activeForm.types : mon?.types ?? [];
+  const imgUrl = mon ? spriteUrl(mon.id, activeForm?.suffix) : null;
+  const typeNames = TYPE_NAME[lang] ?? TYPE_NAME.zh;
+
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {MODIFIERS.map(m => {
-        const on = active.has(m.key);
-        return (
-          <button
-            key={m.key}
-            type="button"
-            onClick={() => onChange(toggle(active, m.key))}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border
-              ${on
-                ? "bg-blue-500/25 border-blue-400/50 text-blue-200"
-                : "bg-white/4 border-white/10 text-white/45 hover:bg-white/8 hover:text-white/65"
-              }`}
-          >
-            {t(m.key)}
-          </button>
-        );
-      })}
+    <div className="flex items-start justify-between gap-2">
+      <div className="flex flex-col gap-1.5">
+        <div className="h-10 flex items-center gap-2">
+          {imgUrl ? (
+            <>
+              <img src={imgUrl} alt="" className="w-10 h-10 object-contain shrink-0" />
+              <div className="flex flex-wrap gap-1">
+                {types.map(tp => (
+                  <TypeBadge key={tp} type={tp} label={typeNames[tp] ?? tp} className="text-[10px] px-1.5 py-0.5" />
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-[10px] tracking-[2px] uppercase text-white/25">{label}</p>
+          )}
+        </div>
+        {detail && detail.mega_forms.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <button
+              type="button"
+              onClick={() => onMega(null)}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors
+                ${megaIdx === null
+                  ? "bg-amber-500/25 border-amber-400/50 text-amber-200"
+                  : "bg-white/4 border-white/10 text-white/40 hover:bg-white/8"
+                }`}
+            >
+              Base
+            </button>
+            {detail.mega_forms.map((mf, i) => (
+              <button
+                key={mf.suffix}
+                type="button"
+                onClick={() => onMega(i)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors
+                  ${megaIdx === i
+                    ? "bg-amber-500/25 border-amber-400/50 text-amber-200"
+                    : "bg-white/4 border-white/10 text-white/40 hover:bg-white/8"
+                  }`}
+              >
+                {megaLabel(mf.suffix)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {liveSpeed !== null && (
+        <span className={`text-2xl font-extrabold tabular-nums leading-none shrink-0 ${speedColorClass}`}>
+          {liveSpeed}
+        </span>
+      )}
     </div>
   );
 }
@@ -136,30 +190,34 @@ export default function SpeedPage() {
 
   const [myMon,  setMyMon]  = useState<PokemonSearchResult | null>(null);
   const [tgtMon, setTgtMon] = useState<PokemonSearchResult | null>(null);
+  const [myDetail,  setMyDetail]  = useState<PokemonDetail | null>(null);
+  const [tgtDetail, setTgtDetail] = useState<PokemonDetail | null>(null);
+  const [myMegaIdx,  setMyMegaIdx]  = useState<number | null>(null);
+  const [tgtMegaIdx, setTgtMegaIdx] = useState<number | null>(null);
   const [myNatMult,  setMyNatMult]  = useState(1.0);
   const [tgtNatMult, setTgtNatMult] = useState(1.0);
   const [myMods,  setMyMods]  = useState<Set<string>>(new Set());
   const [tgtMods, setTgtMods] = useState<Set<string>>(new Set());
   const [mySpEv,  setMySpEv]  = useState(0);
   const [tgtSp,   setTgtSp]   = useState(0);
-  const [myBase,  setMyBase]  = useState<number | null>(null);
-  const [tgtBase, setTgtBase] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!myMon) { setMyBase(null); return; }
-    api.getPokemon(myMon.id).then(d => setMyBase(d.base_stats.speed)).catch(() => {});
+    if (!myMon) { setMyDetail(null); setMyMegaIdx(null); return; }
+    api.getPokemon(myMon.id).then(d => { setMyDetail(d); setMyMegaIdx(null); }).catch(() => {});
   }, [myMon]);
 
   useEffect(() => {
-    if (!tgtMon) { setTgtBase(null); return; }
-    api.getPokemon(tgtMon.id).then(d => setTgtBase(d.base_stats.speed)).catch(() => {});
+    if (!tgtMon) { setTgtDetail(null); setTgtMegaIdx(null); return; }
+    api.getPokemon(tgtMon.id).then(d => { setTgtDetail(d); setTgtMegaIdx(null); }).catch(() => {});
   }, [tgtMon]);
+
+  const myActiveForm  = myDetail  && myMegaIdx  !== null ? myDetail.mega_forms[myMegaIdx]   : null;
+  const tgtActiveForm = tgtDetail && tgtMegaIdx !== null ? tgtDetail.mega_forms[tgtMegaIdx] : null;
+  const myBase  = (myActiveForm  ?? myDetail)?.base_stats.speed  ?? null;
+  const tgtBase = (tgtActiveForm ?? tgtDetail)?.base_stats.speed ?? null;
 
   const myLiveSpeed  = myBase  !== null ? calcLiveSpeed(myBase,  mySpEv, myNatMult,  combinedMult(myMods))  : null;
   const tgtLiveSpeed = tgtBase !== null ? calcLiveSpeed(tgtBase, tgtSp,  tgtNatMult, combinedMult(tgtMods)) : null;
-
-  const myColor  = speedColor(myLiveSpeed,  tgtLiveSpeed);
-  const tgtColor = speedColor(tgtLiveSpeed, myLiveSpeed);
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-7">
@@ -170,19 +228,13 @@ export default function SpeedPage() {
       <div className="grid grid-cols-2 gap-4">
         {/* My */}
         <div className="bg-white/4 border border-white/8 rounded-xl p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {myMon && (
-                <img src={spriteUrl(myMon.id)} alt="" className="w-10 h-10 object-contain" />
-              )}
-              <p className="text-[10px] tracking-[2px] uppercase text-white/25">{t("speed_my_mon")}</p>
-            </div>
-            {myLiveSpeed !== null && (
-              <span className={`text-2xl font-extrabold tabular-nums leading-none ${myColor}`}>
-                {myLiveSpeed}
-              </span>
-            )}
-          </div>
+          <CardHeader
+            mon={myMon} detail={myDetail}
+            megaIdx={myMegaIdx} onMega={setMyMegaIdx}
+            liveSpeed={myLiveSpeed}
+            speedColorClass={speedColor(myLiveSpeed, tgtLiveSpeed)}
+            label={t("speed_my_mon")} lang={lang}
+          />
           <PokemonSelector id="speed-my" label={t("speed_name_label")} lang={lang} onSelect={setMyMon} />
           <div>
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("speed_nature_label")}</p>
@@ -200,19 +252,13 @@ export default function SpeedPage() {
 
         {/* Target */}
         <div className="bg-white/4 border border-white/8 rounded-xl p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {tgtMon && (
-                <img src={spriteUrl(tgtMon.id)} alt="" className="w-10 h-10 object-contain" />
-              )}
-              <p className="text-[10px] tracking-[2px] uppercase text-white/25">{t("speed_tgt_mon")}</p>
-            </div>
-            {tgtLiveSpeed !== null && (
-              <span className={`text-2xl font-extrabold tabular-nums leading-none ${tgtColor}`}>
-                {tgtLiveSpeed}
-              </span>
-            )}
-          </div>
+          <CardHeader
+            mon={tgtMon} detail={tgtDetail}
+            megaIdx={tgtMegaIdx} onMega={setTgtMegaIdx}
+            liveSpeed={tgtLiveSpeed}
+            speedColorClass={speedColor(tgtLiveSpeed, myLiveSpeed)}
+            label={t("speed_tgt_mon")} lang={lang}
+          />
           <PokemonSelector id="speed-tgt" label={t("speed_name_label")} lang={lang} onSelect={setTgtMon} />
           <div>
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("speed_nature_label")}</p>
