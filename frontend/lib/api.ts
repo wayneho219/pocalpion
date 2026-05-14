@@ -9,7 +9,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-import type { PokemonSearchResult, PokemonDetail, SpeedResult, SurvivalResult } from "./types";
+import type { PokemonSearchResult, PokemonDetail, SpeedResult, SurvivalResult, SpriteHashEntry } from "./types";
 
 export const api = {
   searchPokemon: (q: string) =>
@@ -30,4 +30,7 @@ export const api = {
 
   rebuild: () =>
     request<{ count: number }>("/api/admin/rebuild", { method: "POST" }),
+
+  getSpritesHashes: () =>
+    request<SpriteHashEntry[]>("/api/sprites/hashes"),
 };
