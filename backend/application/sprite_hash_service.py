@@ -13,7 +13,7 @@ _cache: Optional[list[dict]] = None
 def _dhash(path: Path) -> str:
     with Image.open(path) as img:
         gray = img.convert("L").resize((HASH_SIZE + 1, HASH_SIZE), Image.LANCZOS)
-    pixels = list(gray.getdata())
+        pixels = list(gray.getdata())
     bits = 0
     for row in range(HASH_SIZE):
         for col in range(HASH_SIZE):
@@ -32,11 +32,15 @@ def get_hashes(repo) -> list[dict]:
 
 def _build(repo) -> list[dict]:
     entries = []
-    for sprite_file in sorted(SPRITES_DIR.glob("*.png"), key=lambda p: int(p.stem)):
+    valid_sprites = []
+    for p in SPRITES_DIR.glob("*.png"):
         try:
-            pokemon_id = int(sprite_file.stem)
+            int(p.stem)
+            valid_sprites.append(p)
         except ValueError:
             continue
+    for sprite_file in sorted(valid_sprites, key=lambda p: int(p.stem)):
+        pokemon_id = int(sprite_file.stem)
         try:
             p = repo.get_by_id(pokemon_id)
         except PokemonNotFoundError:
@@ -51,7 +55,10 @@ def _build(repo) -> list[dict]:
             "mega": [],
         }
         for mega_file in sorted(MEGA_SPRITES_DIR.glob(f"{pokemon_id}-*.png")):
-            suffix = mega_file.stem.split("-", 1)[1]
+            parts = mega_file.stem.split("-", 1)
+            if len(parts) < 2:
+                continue
+            suffix = parts[1]
             entry["mega"].append({"suffix": suffix, "hash": _dhash(mega_file)})
         entries.append(entry)
     return entries
