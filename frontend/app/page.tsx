@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PokemonDetail, PokemonSearchResult } from "@/lib/types";
@@ -34,7 +34,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
 
-  const handleSelect = async (result: PokemonSearchResult) => {
+  const handleSelect = useCallback(async (result: PokemonSearchResult) => {
     setSelectedAbilityKey(null);
     setFetchError(false);
     setMegaIdx(null);
@@ -49,7 +49,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const { registerHandlers } = useScreenshot();
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function SearchPage() {
       (c) => handleSelect(toResult(c)),
     );
     return () => registerHandlers(null, null);
-  }, [registerHandlers]);
+  }, [registerHandlers, handleSelect]);
 
   useEffect(() => {
     if (!pokemon) { setSelectedAbilityKey(null); return; }
