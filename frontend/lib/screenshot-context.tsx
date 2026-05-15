@@ -20,7 +20,7 @@ interface ScreenshotContextValue {
 
 const ScreenshotContext = createContext<ScreenshotContextValue | null>(null);
 
-const HASH_DB_KEY = "poke_hash_db_v1";
+const HASH_DB_KEY = "poke_hash_db_v2";
 
 async function loadHashDB(): Promise<SpriteHashEntry[]> {
   const cached = localStorage.getItem(HASH_DB_KEY);

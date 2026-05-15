@@ -79,4 +79,5 @@ export interface SpriteHashEntry {
   types: string[];
   hash: string;
   mega: MegaHashEntry[];
+  is_final_evolution: boolean;
 }
