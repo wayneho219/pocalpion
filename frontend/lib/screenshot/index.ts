@@ -1,7 +1,8 @@
-import { dhash } from "./dhash";
 import { detectTypes } from "./type-detect";
 import { cropToImageData, LEFT_REGIONS, RIGHT_REGIONS } from "./regions";
-import { rankCandidates } from "./matcher";
+import { rankByHash } from "./matcher";
+import { dhash } from "./dhash";
+import usageWeights from "@/lib/data/vgc_usage.json";
 import type { Candidate } from "./matcher";
 import type { SpriteHashEntry } from "@/lib/types";
 
@@ -16,21 +17,15 @@ export function analyzeScreenshot(
   canvas: HTMLCanvasElement,
   db: SpriteHashEntry[],
 ): AnalysisResult {
-  const processSlot = (spriteData: ImageData, badgeData?: ImageData): SlotCandidates => {
-    const hash = dhash(spriteData);
-    const types = badgeData ? detectTypes(badgeData) : [];
-    return rankCandidates(hash, types, db);
-  };
-
-  const left = LEFT_REGIONS.map(r =>
-    processSlot(cropToImageData(canvas, r.sprite))
-  );
-  const right = RIGHT_REGIONS.map(r =>
-    processSlot(
-      cropToImageData(canvas, r.sprite),
-      r.badge ? cropToImageData(canvas, r.badge) : undefined,
-    )
-  );
-
+  const weights = usageWeights as Record<string, number>;
+  const left = LEFT_REGIONS.map(r => {
+    const h = dhash(cropToImageData(canvas, r.sprite));
+    return rankByHash(h, db, [], 6, weights);
+  });
+  const right = RIGHT_REGIONS.map(r => {
+    const types = r.badge ? detectTypes(cropToImageData(canvas, r.badge)) : [];
+    const h = dhash(cropToImageData(canvas, r.sprite));
+    return rankByHash(h, db, types, 6, weights);
+  });
   return { left, right };
 }
