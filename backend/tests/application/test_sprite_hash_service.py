@@ -53,16 +53,18 @@ class TestGetHashes:
         mock_pokemon.name_zh = "妙蛙種子"
         mock_pokemon.name_ja = "フシギダネ"
         mock_pokemon.types = ["grass", "poison"]
+        mock_pokemon.is_final_evolution = True
         repo = MagicMock()
         repo.get_by_id.return_value = mock_pokemon
 
         result = svc.get_hashes(repo)
         assert len(result) == 1
         entry = result[0]
-        for key in ("id", "name_en", "name_zh", "name_ja", "types", "hash", "mega"):
+        for key in ("id", "name_en", "name_zh", "name_ja", "types", "hash", "mega", "is_final_evolution"):
             assert key in entry
         assert entry["id"] == 1
         assert len(entry["hash"]) == 16
+        assert entry["is_final_evolution"] is True
 
     def test_cache_returns_same_object(self, tmp_path, monkeypatch):
         import application.sprite_hash_service as svc

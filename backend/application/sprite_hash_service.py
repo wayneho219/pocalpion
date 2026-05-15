@@ -53,6 +53,7 @@ def _build(repo) -> list[dict]:
             "types": list(p.types),
             "hash": _dhash(sprite_file),
             "mega": [],
+            "is_final_evolution": p.is_final_evolution,
         }
         for mega_file in sorted(MEGA_SPRITES_DIR.glob(f"{pokemon_id}-*.png")):
             parts = mega_file.stem.split("-", 1)

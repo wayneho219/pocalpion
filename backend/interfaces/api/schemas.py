@@ -112,3 +112,4 @@ class SpriteHashOut(BaseModel):
     types: list[str]
     hash: str
     mega: list[MegaHashOut]
+    is_final_evolution: bool
