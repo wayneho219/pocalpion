@@ -22,8 +22,8 @@ function PokemonSlot({ slot, onSelect }: { slot: SlotCandidates; onSelect: (c: C
     ? (hashDb as SpriteHashEntry[])
         .filter(e =>
           e.name_en.toLowerCase().includes(q) ||
-          e.name_ja.includes(query.trim()) ||
-          e.name_zh.includes(query.trim()),
+          e.name_ja.includes(q) ||
+          e.name_zh.includes(q),
         )
         .sort((a, b) => (weights[b.name_en.toLowerCase()] ?? 0) - (weights[a.name_en.toLowerCase()] ?? 0))
         .slice(0, 30)
