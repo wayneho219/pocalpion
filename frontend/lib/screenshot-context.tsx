@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useRef, useState } from "react";
 import type { Candidate } from "./screenshot/matcher";
 import type { SpriteHashEntry } from "./types";
 
@@ -8,6 +8,7 @@ export type SlotCandidates = Candidate[];
 interface ScreenshotContextValue {
   left: SlotCandidates[];
   right: SlotCandidates[];
+  hashDb: SpriteHashEntry[];
   isProcessing: boolean;
   onSelectLeft: ((c: Candidate) => void) | null;
   onSelectRight: ((c: Candidate) => void) | null;
@@ -36,9 +37,11 @@ async function loadHashDB(): Promise<SpriteHashEntry[]> {
 export function ScreenshotProvider({ children }: { children: React.ReactNode }) {
   const [left,  setLeft]  = useState<SlotCandidates[]>([]);
   const [right, setRight] = useState<SlotCandidates[]>([]);
+  const [hashDb, setHashDb] = useState<SpriteHashEntry[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [onSelectLeft,  setOnSelectLeft]  = useState<((c: Candidate) => void) | null>(null);
   const [onSelectRight, setOnSelectRight] = useState<((c: Candidate) => void) | null>(null);
+  const typeTemplatesRef = useRef<Map<import("./screenshot/type-detect").PokemonType, ImageData> | null>(null);
 
   const registerHandlers = useCallback(
     (l: ((c: Candidate) => void) | null, r: ((c: Candidate) => void) | null) => {
@@ -51,9 +54,14 @@ export function ScreenshotProvider({ children }: { children: React.ReactNode }) 
   const processScreenshot = useCallback(async (canvas: HTMLCanvasElement) => {
     setIsProcessing(true);
     try {
+      if (!typeTemplatesRef.current) {
+        const { loadTypeTemplates } = await import("./screenshot/badge-matcher");
+        typeTemplatesRef.current = await loadTypeTemplates();
+      }
       const db = await loadHashDB();
+      setHashDb(db);
       const { analyzeScreenshot } = await import("./screenshot/index");
-      const result = analyzeScreenshot(canvas, db);
+      const result = analyzeScreenshot(canvas, db, typeTemplatesRef.current);
       setLeft(result.left);
       setRight(result.right);
     } catch (err) {
@@ -65,7 +73,7 @@ export function ScreenshotProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <ScreenshotContext.Provider value={{
-      left, right, isProcessing, onSelectLeft, onSelectRight, registerHandlers, processScreenshot,
+      left, right, hashDb, isProcessing, onSelectLeft, onSelectRight, registerHandlers, processScreenshot,
     }}>
       {children}
     </ScreenshotContext.Provider>
