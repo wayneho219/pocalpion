@@ -13,7 +13,7 @@ export interface AnalysisResult {
   right: SlotCandidates[];
 }
 
-function cropDataURL(canvas: HTMLCanvasElement, data: ImageData): string {
+function cropDataURL(data: ImageData): string {
   const c = document.createElement("canvas");
   c.width = data.width; c.height = data.height;
   c.getContext("2d")!.putImageData(data, 0, 0);
@@ -42,7 +42,7 @@ export function analyzeScreenshot(
     const types = badgeData ? detectTypesNCC(badgeData, templates) : [];
     const candidates = rankByUsage(db, types, weights, 30);
     if (debug) {
-      const badgeCrop = badgeData ? cropDataURL(canvas, badgeData) : null;
+      const badgeCrop = badgeData ? cropDataURL(badgeData) : null;
       console.groupCollapsed(`[R${i+1}] types=${types.join(",") || "none"} | top: ${candidates[0]?.name_en}`);
       if (badgeCrop) console.log("badge: %c ", `font-size:32px;background:url(${badgeCrop}) no-repeat;background-size:contain`);
       candidates.slice(0, 3).forEach(c => console.log(`  ${c.name_en} usage=${c.confidence.toFixed(3)}`));
