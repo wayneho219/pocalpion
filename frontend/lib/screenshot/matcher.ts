@@ -62,3 +62,30 @@ export function rankCandidates(
   candidates.sort((a, b) => a.name_en.localeCompare(b.name_en));
   return candidates.slice(0, topN);
 }
+
+// Ranks final-evolution Pokémon by VGC usage weight. typeHints optionally pre-filter the DB.
+// Falls back to all finals if the type-filtered pool is empty.
+export function rankByUsage(
+  db: SpriteHashEntry[],
+  typeHints: string[],
+  usageWeights: Record<string, number>,
+  topN = 30,
+): Candidate[] {
+  const pool = db.filter(e => e.is_final_evolution);
+  const filtered = typeHints.length > 0
+    ? pool.filter(e => typeHints.some(t => e.types.includes(t)))
+    : pool;
+  const source = filtered.length > 0 ? filtered : pool;
+
+  const result: Candidate[] = source.map(e => ({
+    id: e.id,
+    name_en: e.name_en,
+    name_zh: e.name_zh,
+    name_ja: e.name_ja,
+    types: e.types,
+    confidence: usageWeights[e.name_en.toLowerCase()] ?? 0,
+  }));
+
+  result.sort((a, b) => b.confidence - a.confidence);
+  return result.slice(0, topN);
+}

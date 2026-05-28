@@ -1,4 +1,4 @@
-import { rankCandidates, rankByHash } from "@/lib/screenshot/matcher";
+import { rankCandidates, rankByHash, rankByUsage } from "@/lib/screenshot/matcher";
 import type { SpriteHashEntry } from "@/lib/types";
 
 const DB: SpriteHashEntry[] = [
@@ -103,5 +103,50 @@ describe("rankCandidates", () => {
     expect(r.some(c => c.types.includes("grass"))).toBe(true);
     expect(r.some(c => c.types.includes("water"))).toBe(true);
     expect(r.every(c => c.types.includes("fire"))).toBe(false);
+  });
+});
+
+describe("rankByUsage", () => {
+  const WEIGHTS = { venusaur: 0.9, charizard: 0.5, blastoise: 0.1 };
+
+  it("returns only final evolutions when no type hints", () => {
+    const r = rankByUsage(DB, [], WEIGHTS);
+    const names = r.map(c => c.name_en);
+    expect(names).not.toContain("Bulbasaur");
+    expect(names).not.toContain("Charmander");
+    expect(names).not.toContain("Squirtle");
+  });
+
+  it("sorts by usage weight descending", () => {
+    const r = rankByUsage(DB, [], WEIGHTS);
+    expect(r[0].name_en).toBe("Venusaur");
+    expect(r[1].name_en).toBe("Charizard");
+    expect(r[2].name_en).toBe("Blastoise");
+  });
+
+  it("filters to type-matching finals when typeHints provided", () => {
+    const r = rankByUsage(DB, ["water"], WEIGHTS);
+    expect(r.every(c => c.types.includes("water"))).toBe(true);
+    expect(r.some(c => c.name_en === "Blastoise")).toBe(true);
+    expect(r.some(c => c.name_en === "Venusaur")).toBe(false);
+  });
+
+  it("falls back to all finals when type filter yields empty pool", () => {
+    const r = rankByUsage(DB, ["dragon"], WEIGHTS);
+    expect(r.length).toBeGreaterThan(0);
+    expect(r.some(c => c.name_en === "Venusaur")).toBe(true);
+  });
+
+  it("respects topN limit", () => {
+    const r = rankByUsage(DB, [], WEIGHTS, 2);
+    expect(r).toHaveLength(2);
+  });
+
+  it("Pokémon not in weights get usage 0 and rank last", () => {
+    const r = rankByUsage(DB, [], {});
+    const names = r.map(c => c.name_en);
+    expect(names).toContain("Venusaur");
+    expect(names).toContain("Charizard");
+    expect(names).toContain("Blastoise");
   });
 });
