@@ -3,20 +3,49 @@ import { useState } from "react";
 import { useScreenshot } from "@/lib/screenshot-context";
 import type { Candidate } from "@/lib/screenshot/matcher";
 import type { SlotCandidates } from "@/lib/screenshot-context";
+import usageWeights from "@/lib/data/vgc_usage.json";
+import type { SpriteHashEntry } from "@/lib/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 function PokemonSlot({ slot, onSelect }: { slot: SlotCandidates; onSelect: (c: Candidate) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState("");
+  const { hashDb } = useScreenshot();
+  const weights = usageWeights as Record<string, number>;
+
   const top = slot[0];
   if (!top) return <div className="h-9 rounded-lg bg-white/5" />;
 
-  const lowConf = top.confidence < 0.80;
+  const q = query.trim().toLowerCase();
+  const displayCandidates: Candidate[] = q
+    ? (hashDb as SpriteHashEntry[])
+        .filter(e =>
+          e.name_en.toLowerCase().includes(q) ||
+          e.name_ja.includes(query.trim()) ||
+          e.name_zh.includes(query.trim()),
+        )
+        .sort((a, b) => (weights[b.name_en.toLowerCase()] ?? 0) - (weights[a.name_en.toLowerCase()] ?? 0))
+        .slice(0, 30)
+        .map(e => ({
+          id: e.id,
+          name_en: e.name_en,
+          name_zh: e.name_zh,
+          name_ja: e.name_ja,
+          types: e.types,
+          confidence: 0,
+        }))
+    : slot;
+
+  function handleToggle() {
+    if (expanded) setQuery("");
+    setExpanded(p => !p);
+  }
 
   return (
     <div>
       <button
-        onClick={() => lowConf ? setExpanded(p => !p) : onSelect(top)}
+        onClick={handleToggle}
         className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-left"
       >
         <img
@@ -25,26 +54,36 @@ function PokemonSlot({ slot, onSelect }: { slot: SlotCandidates; onSelect: (c: C
           className="w-8 h-8 object-contain shrink-0"
         />
         <span className="text-xs text-white/80 truncate flex-1">{top.name_en}</span>
-        <div
-          className="w-1.5 h-5 rounded-full shrink-0"
-          style={{ background: `hsl(${Math.round(top.confidence * 120)},70%,50%)` }}
-        />
+        <span className="text-white/30 text-[10px] shrink-0">▾</span>
       </button>
       {expanded && (
-        <ul className="ml-2 mt-0.5 bg-black/50 rounded-lg overflow-hidden">
-          {slot.slice(0, 3).map(c => (
-            <li key={`${c.id}-${c.name_en}`}>
-              <button
-                onClick={() => { onSelect(c); setExpanded(false); }}
-                className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-white/10 text-xs text-white/70 text-left"
-              >
-                <img src={`${API}/sprites/${c.id}.png`} alt={c.name_en} className="w-5 h-5 object-contain shrink-0" />
-                <span className="truncate flex-1">{c.name_en}</span>
-                <span className="text-white/40 shrink-0">{Math.round(c.confidence * 100)}%</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="ml-2 mt-0.5 bg-black/50 rounded-lg overflow-hidden">
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="搜尋寶可夢…"
+            className="w-full px-2 py-1.5 text-xs bg-transparent text-white/70 border-b border-white/10 outline-none placeholder:text-white/30"
+            autoFocus
+          />
+          <ul className="max-h-48 overflow-y-auto">
+            {displayCandidates.map(c => (
+              <li key={`${c.id}-${c.name_en}`}>
+                <button
+                  onClick={() => { onSelect(c); setExpanded(false); setQuery(""); }}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-white/10 text-xs text-white/70 text-left"
+                >
+                  <img
+                    src={`${API}/sprites/${c.id}.png`}
+                    alt={c.name_en}
+                    className="w-5 h-5 object-contain shrink-0"
+                  />
+                  <span className="truncate flex-1">{c.name_en}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
