@@ -1,20 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
-import { api } from "@/lib/api";
+import { api, SPRITE_BASE } from "@/lib/api";
 import type { PokemonSearchResult, PokemonDetail } from "@/lib/types";
 import { useScreenshot } from "@/lib/screenshot-context";
 import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { TypeBadge } from "@/components/TypeBadge";
 import { TYPE_NAME } from "@/lib/type-names";
+import { SPEED_TIERS, type SpeedTierEntry } from "@/lib/data/speed-tiers";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 function spriteUrl(id: number, suffix?: string): string {
   return suffix
-    ? `${API}/sprites/mega/${id}-${suffix}.png`
-    : `${API}/sprites/${id}.png`;
+    ? `${SPRITE_BASE}/mega/${id}-${suffix}.png`
+    : `${SPRITE_BASE}/${id}.png`;
 }
 
 function megaLabel(suffix: string): string {
@@ -45,7 +45,7 @@ function calcLiveSpeed(base: number, sp: number, natMult: number, modMult: numbe
 
 function toggle(set: Set<string>, key: string): Set<string> {
   const next = new Set(set);
-  next.has(key) ? next.delete(key) : next.add(key);
+  if (next.has(key)) { next.delete(key); } else { next.add(key); }
   return next;
 }
 
@@ -288,6 +288,85 @@ export default function SpeedPage() {
             <p className="text-[10px] text-white/25 mb-1.5 uppercase tracking-wide">{t("speed_tgt_sp_label")}</p>
             <SpEvInput value={tgtSp} onChange={setTgtSp} />
           </div>
+        </div>
+      </div>
+
+      {/* Speed Tier Table */}
+      <SpeedTierTable mySpeed={myLiveSpeed} lang={lang} t={t} />
+    </div>
+  );
+}
+
+function SpeedTierTable({
+  mySpeed, lang, t,
+}: { mySpeed: number | null; lang: string; t: (k: string) => string }) {
+  const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
+
+  return (
+    <div className="mt-6">
+      <p className="text-[11px] font-bold tracking-[2.5px] uppercase text-white/22 mb-3">
+        {t("speed_tier_header")}
+      </p>
+      <div className="bg-white/4 border border-white/8 rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-0">
+          {/* header */}
+          <div className="grid grid-cols-[1fr_auto_auto] col-span-3 gap-0
+            border-b border-white/8 px-4 py-2 bg-white/3">
+            <span className="text-[10px] uppercase tracking-widest text-white/25">
+              {lang === "zh" ? "寶可夢" : lang === "ja" ? "ポケモン" : "Pokémon"}
+            </span>
+            <span className="text-[10px] uppercase tracking-widest text-white/25 text-right w-16">
+              {t("speed_tier_base")}
+            </span>
+            <span className="text-[10px] uppercase tracking-widest text-white/25 text-right w-20 ml-4">
+              {mySpeed !== null ? (lang === "zh" ? "結果" : lang === "ja" ? "結果" : "Result") : ""}
+            </span>
+          </div>
+
+          {SPEED_TIERS.map((entry, i) => {
+            const outspeeds = mySpeed !== null && mySpeed > entry.base_speed;
+            const tied      = mySpeed !== null && mySpeed === entry.base_speed;
+            const isMyLine  = mySpeed !== null && i > 0 && entry.base_speed < mySpeed &&
+                              (i === 0 || SPEED_TIERS[i - 1].base_speed >= mySpeed);
+
+            return (
+              <>
+                {isMyLine && (
+                  <div key={`line-${entry.base_speed}`}
+                    className="col-span-3 flex items-center gap-2 px-4 py-1.5 bg-green-500/8 border-y border-green-400/30">
+                    <span className="text-[11px] font-bold text-green-300">
+                      ▶ {lang === "zh" ? "你的速度" : lang === "ja" ? "あなたの速度" : "Your speed"}{" "}
+                      <span className="tabular-nums">{mySpeed}</span>
+                    </span>
+                  </div>
+                )}
+                <div
+                  key={entry.name_en}
+                  className={`col-span-3 grid grid-cols-[1fr_auto_auto] items-center px-4 py-2
+                    border-b border-white/5 last:border-0 transition-colors
+                    ${outspeeds ? "hover:bg-white/3" : "hover:bg-white/3 opacity-70"}`}
+                >
+                  <span className={`text-[12px] ${outspeeds ? "text-white/80" : tied ? "text-yellow-300/80" : "text-white/45"}`}>
+                    {entry[nameKey as keyof SpeedTierEntry] as string}
+                  </span>
+                  <span className="text-[12px] font-mono text-white/50 text-right w-16 tabular-nums">
+                    {entry.base_speed}
+                  </span>
+                  <div className="text-right w-20 ml-4">
+                    {mySpeed !== null && (
+                      outspeeds ? (
+                        <span className="text-[11px] font-bold text-green-400">✓ 超速</span>
+                      ) : tied ? (
+                        <span className="text-[11px] font-bold text-yellow-400">= 同速</span>
+                      ) : (
+                        <span className="text-[11px] text-white/25">× 慢</span>
+                      )
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { api } from "@/lib/api";
+import { api, SPRITE_BASE } from "@/lib/api";
 import type { PokemonSearchResult } from "@/lib/types";
 import type { Lang } from "@/lib/i18n";
 
@@ -74,7 +74,7 @@ export function PokemonSelector({ id, label, lang, onSelect, value }: PokemonSel
                   hover:bg-white/8 transition-colors"
               >
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/sprites/${p.id}.png`}
+                  src={`${SPRITE_BASE}/${p.id}.png`}
                   alt=""
                   loading="lazy"
                   className="w-7 h-7 object-contain shrink-0"

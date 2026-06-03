@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useLang } from "@/lib/i18n";
-import { api } from "@/lib/api";
+import { api, SPRITE_BASE } from "@/lib/api";
 import type { PokemonDetail, PokemonSearchResult } from "@/lib/types";
 import { useScreenshot } from "@/lib/screenshot-context";
 import type { Candidate } from "@/lib/screenshot/matcher";
@@ -74,7 +74,7 @@ export default function SearchPage() {
   const nameKey = lang === "zh" ? "name_zh" : lang === "ja" ? "name_ja" : "name_en";
   const typeNames = TYPE_NAME[lang] ?? TYPE_NAME.zh;
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
   const activeForm = pokemon && megaIdx !== null ? pokemon.mega_forms[megaIdx] : null;
   const displayTypes      = activeForm ? activeForm.types      : pokemon?.types;
   const displayStats      = activeForm ? activeForm.base_stats : pokemon?.base_stats;
@@ -92,8 +92,8 @@ export default function SearchPage() {
     return null;
   })();
   const displaySpriteUrl  = activeForm
-    ? `${API_URL}/sprites/mega/${pokemon!.id}-${activeForm.suffix}.png`
-    : pokemon ? `${API_URL}/sprites/${pokemon.id}.png` : null;
+    ? `${SPRITE_BASE}/mega/${pokemon!.id}-${activeForm.suffix}.png`
+    : pokemon ? `${SPRITE_BASE}/${pokemon.id}.png` : null;
   const megaLabel = (suffix: string) =>
     suffix.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 

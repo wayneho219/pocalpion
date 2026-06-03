@@ -1,5 +1,7 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export const SPRITE_BASE = process.env.NEXT_PUBLIC_SPRITE_URL ?? `${BASE}/sprites`;
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -9,7 +11,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-import type { PokemonSearchResult, PokemonDetail, SpeedResult, SurvivalResult, SpriteHashEntry } from "./types";
+import type { PokemonSearchResult, PokemonDetail, SpeedResult, SurvivalResult, SpriteHashEntry, MoveEntry } from "./types";
 
 export const api = {
   searchPokemon: (q: string) =>
@@ -33,4 +35,7 @@ export const api = {
 
   getSpritesHashes: () =>
     request<SpriteHashEntry[]>("/api/sprites/hashes"),
+
+  getMoves: () =>
+    request<MoveEntry[]>("/api/moves"),
 };
