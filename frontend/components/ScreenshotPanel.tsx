@@ -5,8 +5,7 @@ import type { Candidate } from "@/lib/screenshot/matcher";
 import type { SlotCandidates } from "@/lib/screenshot-context";
 import usageWeights from "@/lib/data/vgc_usage.json";
 import type { SpriteHashEntry } from "@/lib/types";
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { SPRITE_BASE } from "@/lib/api";
 
 function PokemonSlot({ slot, onSelect }: { slot: SlotCandidates; onSelect: (c: Candidate) => void }) {
   const [expanded, setExpanded] = useState(false);
@@ -49,7 +48,7 @@ function PokemonSlot({ slot, onSelect }: { slot: SlotCandidates; onSelect: (c: C
         className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-left"
       >
         <img
-          src={`${API}/sprites/${top.id}.png`}
+          src={`${SPRITE_BASE}/${top.id}.png`}
           alt={top.name_en}
           className="w-8 h-8 object-contain shrink-0"
         />
@@ -74,7 +73,7 @@ function PokemonSlot({ slot, onSelect }: { slot: SlotCandidates; onSelect: (c: C
                   className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-white/10 text-xs text-white/70 text-left"
                 >
                   <img
-                    src={`${API}/sprites/${c.id}.png`}
+                    src={`${SPRITE_BASE}/${c.id}.png`}
                     alt={c.name_en}
                     className="w-5 h-5 object-contain shrink-0"
                   />
