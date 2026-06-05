@@ -70,9 +70,11 @@ function NatStatPicker({
   ];
 
   function setBoost(k: StatKey | null) {
+    if (k === null) { onChange({ boosted: null, reduced: null }); return; }
     onChange({ boosted: k, reduced: k === value.reduced ? null : value.reduced });
   }
   function setReduce(k: StatKey | null) {
+    if (k === null) { onChange({ boosted: null, reduced: null }); return; }
     onChange({ boosted: k === value.boosted ? null : value.boosted, reduced: k });
   }
 
@@ -528,11 +530,12 @@ function PokeCard({
 // ─── result row ──────────────────────────────────────────────────────────────
 
 function ResultRow({
-  move, lang, atkStats, defStats, defTypes, atkTypes,
+  move, lang, t, atkStats, defStats, defTypes, atkTypes,
   atkAtkStage, atkSpaStage, defDefStage, defSpdStage,
 }: {
   move: MoveEntry;
   lang: Lang;
+  t: (k: string) => string;
   atkStats: ReturnType<typeof calcAllStats>;
   defStats: ReturnType<typeof calcAllStats>;
   defTypes: string[];
@@ -600,10 +603,12 @@ function ResultRow({
     ? `×${result.typeMult}` + (atkTypes.includes(move.type) ? " +屬" : "")
     : atkTypes.includes(move.type) ? "+屬" : null;
 
+  const atkLabel = isPhysical ? t("dmg_stage_atk") : t("dmg_stage_spa");
+  const defLabel = isPhysical ? t("dmg_stage_def") : t("dmg_stage_spd");
   const stageLabel = (() => {
     const parts: string[] = [];
-    if (atkStage !== 0) parts.push(`攻${atkStage > 0 ? `+${atkStage}` : atkStage}`);
-    if (defStage !== 0) parts.push(`防${defStage > 0 ? `+${defStage}` : defStage}`);
+    if (atkStage !== 0) parts.push(`${atkLabel}${atkStage > 0 ? `+${atkStage}` : atkStage}`);
+    if (defStage !== 0) parts.push(`${defLabel}${defStage > 0 ? `+${defStage}` : defStage}`);
     return parts.join(" ");
   })();
 
@@ -765,6 +770,7 @@ export default function DamagePage() {
                 key={`${move.name_en}-${i}`}
                 move={move}
                 lang={lang}
+                t={t}
                 atkStats={atkStats!}
                 defStats={defStats!}
                 defTypes={defTypes}
