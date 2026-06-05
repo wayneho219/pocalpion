@@ -12,7 +12,15 @@ _cache: Optional[list[dict]] = None
 
 def _dhash(path: Path) -> str:
     with Image.open(path) as img:
-        gray = img.convert("L").resize((HASH_SIZE + 1, HASH_SIZE), Image.LANCZOS)
+        # Composite on neutral gray so transparent sprites match game screenshot normalization
+        if img.mode in ("RGBA", "LA", "PA"):
+            bg = Image.new("RGB", img.size, (128, 128, 128))
+            alpha = img.convert("RGBA").split()[3]
+            bg.paste(img.convert("RGB"), mask=alpha)
+            img_rgb = bg
+        else:
+            img_rgb = img.convert("RGB")
+        gray = img_rgb.convert("L").resize((HASH_SIZE + 1, HASH_SIZE), Image.LANCZOS)
         pixels = list(gray.getdata())
     bits = 0
     for row in range(HASH_SIZE):

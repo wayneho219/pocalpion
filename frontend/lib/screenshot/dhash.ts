@@ -24,9 +24,39 @@ export function hammingDistance(a: string, b: string): number {
   return dist;
 }
 
+// Replace border-colored background pixels with neutral gray so game screenshot
+// background (purple/blue gradient) doesn't contaminate the hash.
+function normalizeBg(src: ImageData): ImageData {
+  const { data, width, height } = src;
+  let rS = 0, gS = 0, bS = 0, n = 0;
+  for (let x = 0; x < width; x++) {
+    for (const y of [0, height - 1]) {
+      const i = (y * width + x) * 4;
+      rS += data[i]; gS += data[i+1]; bS += data[i+2]; n++;
+    }
+  }
+  for (let y = 1; y < height - 1; y++) {
+    for (const x of [0, width - 1]) {
+      const i = (y * width + x) * 4;
+      rS += data[i]; gS += data[i+1]; bS += data[i+2]; n++;
+    }
+  }
+  const bgR = rS / n, bgG = gS / n, bgB = bS / n;
+  const THRESH = 30;
+  const out = new Uint8ClampedArray(data.length);
+  for (let i = 0; i < width * height; i++) {
+    const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+    const d = Math.sqrt((r-bgR)**2 + (g-bgG)**2 + (b-bgB)**2);
+    if (d < THRESH) { out[i*4]=128; out[i*4+1]=128; out[i*4+2]=128; }
+    else { out[i*4]=r; out[i*4+1]=g; out[i*4+2]=b; }
+    out[i*4+3] = 255;
+  }
+  return new ImageData(out, width, height);
+}
+
 /** DOM wrapper — not unit tested. Resizes imageData to (HASH_SIZE+1)×HASH_SIZE, converts to grayscale. */
 export function dhash(imageData: ImageData): string {
-  return dhashFromPixels(_toGrayscaleResized(imageData, HASH_SIZE + 1, HASH_SIZE), HASH_SIZE + 1);
+  return dhashFromPixels(_toGrayscaleResized(normalizeBg(imageData), HASH_SIZE + 1, HASH_SIZE), HASH_SIZE + 1);
 }
 
 function _toGrayscaleResized(src: ImageData, w: number, h: number): Uint8Array {
