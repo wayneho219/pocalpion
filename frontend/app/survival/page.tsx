@@ -3,8 +3,6 @@ import { useState, useEffect } from "react";
 import { useLang } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import type { PokemonSearchResult, SurvivalResult, SurvivalPlan } from "@/lib/types";
-import { useScreenshot } from "@/lib/screenshot-context";
-import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { NatureSelector } from "@/components/NatureSelector";
 
@@ -46,15 +44,6 @@ export default function SurvivalPage() {
   const [impossible, setImpossible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [calcError, setCalcError] = useState(false);
-
-  const { registerHandlers } = useScreenshot();
-  useEffect(() => {
-    const toResult = (c: Candidate): PokemonSearchResult => ({
-      id: c.id, name_en: c.name_en, name_zh: c.name_zh, name_ja: c.name_ja, types: c.types,
-    });
-    registerHandlers((c) => setMon(toResult(c)), null);
-    return () => registerHandlers(null, null);
-  }, [registerHandlers]);
 
   const calc = async () => {
     if (!mon) return;

@@ -66,11 +66,6 @@ export interface SurvivalResult {
   prefer_def: SurvivalPlan;
 }
 
-export interface MegaHashEntry {
-  suffix: string;
-  hash: string;
-}
-
 export interface MoveEntry {
   name_en: string;
   name_zh: string;
@@ -80,13 +75,3 @@ export interface MoveEntry {
   type: string;
 }
 
-export interface SpriteHashEntry {
-  id: number;
-  name_en: string;
-  name_zh: string;
-  name_ja: string;
-  types: string[];
-  hash: string;
-  mega: MegaHashEntry[];
-  is_final_evolution: boolean;
-}

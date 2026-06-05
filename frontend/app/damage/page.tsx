@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useLang, type Lang } from "@/lib/i18n";
 import { api, SPRITE_BASE } from "@/lib/api";
 import type { PokemonSearchResult, PokemonDetail, MoveEntry } from "@/lib/types";
-import { useScreenshot } from "@/lib/screenshot-context";
-import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { NatureSelector } from "@/components/NatureSelector";
 import { TypeBadge } from "@/components/TypeBadge";
@@ -515,18 +513,6 @@ export default function DamagePage() {
   const handleDefSelect = useCallback((r: PokemonSearchResult) => {
     setDefMon(r); setDefMega(null); setDefSP(EMPTY_SP);
   }, []);
-
-  const { registerHandlers } = useScreenshot();
-  useEffect(() => {
-    const toResult = (c: Candidate): PokemonSearchResult => ({
-      id: c.id, name_en: c.name_en, name_zh: c.name_zh, name_ja: c.name_ja, types: c.types,
-    });
-    registerHandlers(
-      c => handleAtkSelect(toResult(c)),
-      c => handleDefSelect(toResult(c)),
-    );
-    return () => registerHandlers(null, null);
-  }, [registerHandlers, handleAtkSelect, handleDefSelect]);
 
   const atkActiveForm = atkDetail && atkMega !== null ? atkDetail.mega_forms[atkMega] : null;
   const defActiveForm = defDetail && defMega !== null ? defDetail.mega_forms[defMega] : null;

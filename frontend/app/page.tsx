@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useLang } from "@/lib/i18n";
 import { api, SPRITE_BASE } from "@/lib/api";
 import type { PokemonDetail, PokemonSearchResult } from "@/lib/types";
-import { useScreenshot } from "@/lib/screenshot-context";
-import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
 import { TypeBadge } from "@/components/TypeBadge";
 import { TYPE_NAME } from "@/lib/type-names";
@@ -50,18 +48,6 @@ export default function SearchPage() {
       setLoading(false);
     }
   }, []);
-
-  const { registerHandlers } = useScreenshot();
-  useEffect(() => {
-    const toResult = (c: Candidate): PokemonSearchResult => ({
-      id: c.id, name_en: c.name_en, name_zh: c.name_zh, name_ja: c.name_ja, types: c.types,
-    });
-    registerHandlers(
-      (c) => handleSelect(toResult(c)),
-      (c) => handleSelect(toResult(c)),
-    );
-    return () => registerHandlers(null, null);
-  }, [registerHandlers, handleSelect]);
 
   useEffect(() => {
     if (!pokemon) { setSelectedAbilityKey(null); return; }

@@ -99,17 +99,3 @@ class RebuildOut(BaseModel):
     count: int
 
 
-class MegaHashOut(BaseModel):
-    suffix: str
-    hash: str
-
-
-class SpriteHashOut(BaseModel):
-    id: int
-    name_en: str
-    name_zh: str
-    name_ja: str
-    types: list[str]
-    hash: str
-    mega: list[MegaHashOut]
-    is_final_evolution: bool
