@@ -3,7 +3,6 @@ from adapters.local_json_repository import LocalJsonRepository
 from adapters.csv_name_provider import CsvNameProvider
 from application.calculator import StatCalculator
 from application.speed_service import SpeedService
-from application.survival_service import SurvivalService
 from application.search_service import SearchService
 from shared.config import DATA_JSON_PATH, CSV_PATH
 
@@ -23,7 +22,6 @@ def get_services() -> dict:
         "repo": repo,
         "search": SearchService(repo, csv_provider),
         "speed": SpeedService(calc),
-        "survival": SurvivalService(calc),
     }
 
 
