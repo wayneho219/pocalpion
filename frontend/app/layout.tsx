@@ -4,8 +4,17 @@ import { LangProvider } from "@/lib/i18n";
 import { Nav } from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "Pokémon Calc",
-  description: "Pokémon stat calculator",
+  title: "PokeCalc",
+  description: "Pokémon Champions VGC 計算工具",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PokeCalc",
+  },
+  icons: {
+    apple: "/icons/icon-192.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
