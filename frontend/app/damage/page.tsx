@@ -3,13 +3,11 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useLang, type Lang } from "@/lib/i18n";
 import { api, SPRITE_BASE } from "@/lib/api";
 import type { PokemonSearchResult, PokemonDetail, MoveEntry } from "@/lib/types";
-import { useScreenshot } from "@/lib/screenshot-context";
-import type { Candidate } from "@/lib/screenshot/matcher";
 import { PokemonSelector } from "@/components/PokemonSelector";
-import { NatureSelector } from "@/components/NatureSelector";
 import { TypeBadge } from "@/components/TypeBadge";
 import { TYPE_NAME } from "@/lib/type-names";
-import { type SP, EMPTY_SP, spTotal, calcAllStats, calcDamage } from "@/lib/damage-calc";
+import { type SP, EMPTY_SP, spTotal, calcAllStats, calcDamage, stageMult } from "@/lib/damage-calc";
+import { NATURES, type StatKey } from "@/lib/natures";
 
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -41,6 +39,134 @@ const TYPE_COLOR: Record<string, string> = {
   ghost:"#7c3aed", dragon:"#4f46e5", dark:"#1c1917", steel:"#94a3b8",
   fairy:"#f9a8d4", normal:"#6b7280",
 };
+
+// ─── nature parts ────────────────────────────────────────────────────────────
+
+type NatureParts = { boosted: StatKey | null; reduced: StatKey | null };
+const NEUTRAL_NAT: NatureParts = { boosted: null, reduced: null };
+
+const SPE_LABEL: Record<Lang, string> = { zh: "速", en: "Spe", ja: "素早" };
+
+function natureName(p: NatureParts): string {
+  if (!p.boosted && !p.reduced) return "Hardy";
+  return NATURES.find(n => n.boosted === p.boosted && n.reduced === p.reduced)?.en ?? "Hardy";
+}
+
+function NatStatPicker({
+  value, onChange, t, lang,
+}: {
+  value: NatureParts;
+  onChange: (p: NatureParts) => void;
+  t: (k: string) => string;
+  lang: Lang;
+}) {
+  const opts: { key: StatKey | null; label: string }[] = [
+    { key: null, label: t("speed_nat_neutral") },
+    { key: "atk", label: t("dmg_stage_atk") },
+    { key: "def", label: t("dmg_stage_def") },
+    { key: "spa", label: t("dmg_stage_spa") },
+    { key: "spd", label: t("dmg_stage_spd") },
+    { key: "spe", label: SPE_LABEL[lang] ?? "速" },
+  ];
+
+  function setBoost(k: StatKey | null) {
+    onChange({ boosted: k, reduced: k === value.reduced ? null : value.reduced });
+  }
+  function setReduce(k: StatKey | null) {
+    onChange({ boosted: k === value.boosted ? null : value.boosted, reduced: k });
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[9px] text-amber-400/70 font-bold uppercase tracking-wide w-7 shrink-0">
+          {t("dmg_nature_boost")}
+        </span>
+        <div className="flex gap-1 flex-1 flex-wrap">
+          {opts.map(o => (
+            <button
+              key={String(o.key)}
+              type="button"
+              onClick={() => setBoost(o.key)}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors border
+                ${value.boosted === o.key
+                  ? "bg-amber-500/30 border-amber-400/50 text-amber-200"
+                  : "bg-white/4 border-white/8 text-white/40 hover:bg-white/8 hover:text-white/65"
+                }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[9px] text-blue-400/70 font-bold uppercase tracking-wide w-7 shrink-0">
+          {t("dmg_nature_reduce")}
+        </span>
+        <div className="flex gap-1 flex-1 flex-wrap">
+          {opts.map(o => (
+            <button
+              key={String(o.key)}
+              type="button"
+              onClick={() => setReduce(o.key)}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors border
+                ${value.reduced === o.key
+                  ? "bg-blue-500/30 border-blue-400/50 text-blue-200"
+                  : "bg-white/4 border-white/8 text-white/40 hover:bg-white/8 hover:text-white/65"
+                }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── stat stage stepper ──────────────────────────────────────────────────────
+
+function StageStepper({
+  label, value, onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const color =
+    value > 0 ? "text-green-300" :
+    value < 0 ? "text-red-300" :
+    "text-white/40";
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] text-white/35 w-8 shrink-0">{label}</span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          disabled={value >= 6}
+          onClick={() => onChange(Math.min(6, value + 1))}
+          className="w-5 h-5 flex items-center justify-center text-[10px] text-white/50
+            hover:text-white/90 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+        >
+          ▲
+        </button>
+        <span className={`w-7 text-center text-[12px] font-bold tabular-nums ${color}`}>
+          {value > 0 ? `+${value}` : value}
+        </span>
+        <button
+          type="button"
+          disabled={value <= -6}
+          onClick={() => onChange(Math.max(-6, value - 1))}
+          className="w-5 h-5 flex items-center justify-center text-[10px] text-white/50
+            hover:text-white/90 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+        >
+          ▼
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ─── SP allocation ───────────────────────────────────────────────────────────
 
@@ -243,8 +369,8 @@ interface PokeCardProps {
   detail: PokemonDetail | null;
   megaIdx: number | null;
   onMega: (i: number | null) => void;
-  nature: string;
-  onNature: (n: string) => void;
+  nat: NatureParts;
+  onNat: (p: NatureParts) => void;
   sp: SP;
   onSP: (sp: SP) => void;
   lang: Lang;
@@ -255,11 +381,21 @@ interface PokeCardProps {
   allMoves?: MoveEntry[];
   onMoveChange?: (idx: number, m: MoveEntry | null) => void;
   calcedStats: ReturnType<typeof calcAllStats> | null;
+  atkStage?: number;
+  onAtkStage?: (v: number) => void;
+  spaStage?: number;
+  onSpaStage?: (v: number) => void;
+  defStage?: number;
+  onDefStage?: (v: number) => void;
+  spdStage?: number;
+  onSpdStage?: (v: number) => void;
 }
 
 function PokeCard({
-  side, mon, detail, megaIdx, onMega, nature, onNature, sp, onSP,
+  side, mon, detail, megaIdx, onMega, nat, onNat, sp, onSP,
   lang, t, onSelect, value, moves, allMoves, onMoveChange, calcedStats,
+  atkStage, onAtkStage, spaStage, onSpaStage,
+  defStage, onDefStage, spdStage, onSpdStage,
 }: PokeCardProps) {
   const activeForm = detail && megaIdx !== null ? detail.mega_forms[megaIdx] : null;
   const types = activeForm ? activeForm.types : mon?.types ?? [];
@@ -336,7 +472,7 @@ function PokeCard({
       {/* Nature */}
       <div>
         <p className="text-[10px] text-white/25 uppercase tracking-wide mb-2">{t("dmg_nature")}</p>
-        <NatureSelector lang={lang} value={nature} onChange={onNature} />
+        <NatStatPicker value={nat} onChange={onNat} t={t} lang={lang} />
       </div>
 
       {/* SP */}
@@ -347,6 +483,25 @@ function PokeCard({
 
       {/* Calculated stats */}
       <StatDisplay stats={calcedStats} />
+
+      {/* Stat stages */}
+      <div>
+        <p className="text-[10px] text-white/25 uppercase tracking-wide mb-2">{t("dmg_stage_title")}</p>
+        <div className="flex flex-col gap-1">
+          {side === "attacker" && onAtkStage && onSpaStage && (
+            <>
+              <StageStepper label={t("dmg_stage_atk")} value={atkStage ?? 0} onChange={onAtkStage} />
+              <StageStepper label={t("dmg_stage_spa")} value={spaStage ?? 0} onChange={onSpaStage} />
+            </>
+          )}
+          {side === "defender" && onDefStage && onSpdStage && (
+            <>
+              <StageStepper label={t("dmg_stage_def")} value={defStage ?? 0} onChange={onDefStage} />
+              <StageStepper label={t("dmg_stage_spd")} value={spdStage ?? 0} onChange={onSpdStage} />
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Move slots (attacker only) */}
       {moves && allMoves && onMoveChange && (
@@ -374,6 +529,7 @@ function PokeCard({
 
 function ResultRow({
   move, lang, atkStats, defStats, defTypes, atkTypes,
+  atkAtkStage, atkSpaStage, defDefStage, defSpdStage,
 }: {
   move: MoveEntry;
   lang: Lang;
@@ -381,6 +537,10 @@ function ResultRow({
   defStats: ReturnType<typeof calcAllStats>;
   defTypes: string[];
   atkTypes: string[];
+  atkAtkStage: number;
+  atkSpaStage: number;
+  defDefStage: number;
+  defSpdStage: number;
 }) {
   const name = moveDisplayName(move, lang);
 
@@ -399,13 +559,16 @@ function ResultRow({
     );
   }
 
-  const atkStat = move.category === "physical" ? atkStats.attack : atkStats.sp_attack;
-  const defStat = move.category === "physical" ? defStats.defense : defStats.sp_defense;
+  const isPhysical = move.category === "physical";
+  const rawAtkStat = isPhysical ? atkStats.attack : atkStats.sp_attack;
+  const atkStage   = isPhysical ? atkAtkStage : atkSpaStage;
+  const rawDefStat = isPhysical ? defStats.defense : defStats.sp_defense;
+  const defStage   = isPhysical ? defDefStage : defSpdStage;
 
-  const result = calcDamage(move.power, atkStat, defStat, defStats.hp, move.type, atkTypes, defTypes);
+  const effectiveAtkStat = Math.floor(rawAtkStat * stageMult(atkStage));
+  const effectiveDefStat = Math.floor(rawDefStat * stageMult(defStage));
 
-  let rowClass = "bg-white/3 border-white/6";
-  let koTag: string | null = null;
+  const result = calcDamage(move.power, effectiveAtkStat, effectiveDefStat, defStats.hp, move.type, atkTypes, defTypes);
 
   if (result.immune) {
     return (
@@ -422,6 +585,9 @@ function ResultRow({
     );
   }
 
+  let rowClass = "bg-white/3 border-white/6";
+  let koTag: string | null = null;
+
   if (result.minPct >= 100) {
     rowClass = "bg-red-500/8 border-red-500/30";
     koTag = "確定 KO";
@@ -433,6 +599,13 @@ function ResultRow({
   const multLabel = result.typeMult !== 1.0
     ? `×${result.typeMult}` + (atkTypes.includes(move.type) ? " +屬" : "")
     : atkTypes.includes(move.type) ? "+屬" : null;
+
+  const stageLabel = (() => {
+    const parts: string[] = [];
+    if (atkStage !== 0) parts.push(`攻${atkStage > 0 ? `+${atkStage}` : atkStage}`);
+    if (defStage !== 0) parts.push(`防${defStage > 0 ? `+${defStage}` : defStage}`);
+    return parts.join(" ");
+  })();
 
   return (
     <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-colors ${rowClass}`}>
@@ -448,6 +621,10 @@ function ResultRow({
       <span className="text-[9px] text-white/25 shrink-0">
         {move.category === "physical" ? "⚔" : "✦"} {move.power}
       </span>
+
+      {stageLabel && (
+        <span className="text-[9px] text-purple-300/70 shrink-0">{stageLabel}</span>
+      )}
 
       {multLabel && (
         <span className="text-[9px] font-bold shrink-0"
@@ -490,12 +667,16 @@ export default function DamagePage() {
   const [defDetail, setDefDetail] = useState<PokemonDetail | null>(null);
   const [atkMega, setAtkMega] = useState<number | null>(null);
   const [defMega, setDefMega] = useState<number | null>(null);
-  const [atkNature, setAtkNature] = useState("Hardy");
-  const [defNature, setDefNature] = useState("Hardy");
+  const [atkNat, setAtkNat] = useState<NatureParts>(NEUTRAL_NAT);
+  const [defNat, setDefNat] = useState<NatureParts>(NEUTRAL_NAT);
   const [atkSP, setAtkSP] = useState<SP>(EMPTY_SP);
   const [defSP, setDefSP] = useState<SP>(EMPTY_SP);
   const [moves, setMoves] = useState<(MoveEntry | null)[]>([null, null, null, null]);
   const [allMoves, setAllMoves] = useState<MoveEntry[]>([]);
+  const [atkAtkStage, setAtkAtkStage] = useState(0);
+  const [atkSpaStage, setAtkSpaStage] = useState(0);
+  const [defDefStage, setDefDefStage] = useState(0);
+  const [defSpdStage, setDefSpdStage] = useState(0);
 
   useEffect(() => { api.getMoves().then(setAllMoves).catch(() => {}); }, []);
 
@@ -510,23 +691,11 @@ export default function DamagePage() {
   }, [defMon]);
 
   const handleAtkSelect = useCallback((r: PokemonSearchResult) => {
-    setAtkMon(r); setAtkMega(null); setAtkSP(EMPTY_SP);
+    setAtkMon(r); setAtkMega(null); setAtkSP(EMPTY_SP); setAtkNat(NEUTRAL_NAT);
   }, []);
   const handleDefSelect = useCallback((r: PokemonSearchResult) => {
-    setDefMon(r); setDefMega(null); setDefSP(EMPTY_SP);
+    setDefMon(r); setDefMega(null); setDefSP(EMPTY_SP); setDefNat(NEUTRAL_NAT);
   }, []);
-
-  const { registerHandlers } = useScreenshot();
-  useEffect(() => {
-    const toResult = (c: Candidate): PokemonSearchResult => ({
-      id: c.id, name_en: c.name_en, name_zh: c.name_zh, name_ja: c.name_ja, types: c.types,
-    });
-    registerHandlers(
-      c => handleAtkSelect(toResult(c)),
-      c => handleDefSelect(toResult(c)),
-    );
-    return () => registerHandlers(null, null);
-  }, [registerHandlers, handleAtkSelect, handleDefSelect]);
 
   const atkActiveForm = atkDetail && atkMega !== null ? atkDetail.mega_forms[atkMega] : null;
   const defActiveForm = defDetail && defMega !== null ? defDetail.mega_forms[defMega] : null;
@@ -537,8 +706,8 @@ export default function DamagePage() {
   const atkTypes: string[] = atkActiveForm?.types ?? atkMon?.types ?? [];
   const defTypes: string[] = defActiveForm?.types ?? defMon?.types ?? [];
 
-  const atkStats = atkBase ? calcAllStats(atkBase, atkSP, atkNature) : null;
-  const defStats = defBase ? calcAllStats(defBase, defSP, defNature) : null;
+  const atkStats = atkBase ? calcAllStats(atkBase, atkSP, natureName(atkNat)) : null;
+  const defStats = defBase ? calcAllStats(defBase, defSP, natureName(defNat)) : null;
 
   const handleMoveChange = (idx: number, m: MoveEntry | null) => {
     setMoves(prev => prev.map((mv, i) => i === idx ? m : mv));
@@ -557,21 +726,25 @@ export default function DamagePage() {
         <PokeCard
           side="attacker"
           mon={atkMon} detail={atkDetail} megaIdx={atkMega} onMega={setAtkMega}
-          nature={atkNature} onNature={setAtkNature}
+          nat={atkNat} onNat={setAtkNat}
           sp={atkSP} onSP={setAtkSP}
           lang={lang} t={t}
           onSelect={handleAtkSelect} value={atkMon}
           moves={moves} allMoves={allMoves} onMoveChange={handleMoveChange}
           calcedStats={atkStats}
+          atkStage={atkAtkStage} onAtkStage={setAtkAtkStage}
+          spaStage={atkSpaStage} onSpaStage={setAtkSpaStage}
         />
         <PokeCard
           side="defender"
           mon={defMon} detail={defDetail} megaIdx={defMega} onMega={setDefMega}
-          nature={defNature} onNature={setDefNature}
+          nat={defNat} onNat={setDefNat}
           sp={defSP} onSP={setDefSP}
           lang={lang} t={t}
           onSelect={handleDefSelect} value={defMon}
           calcedStats={defStats}
+          defStage={defDefStage} onDefStage={setDefDefStage}
+          spdStage={defSpdStage} onSpdStage={setDefSpdStage}
         />
       </div>
 
@@ -596,6 +769,10 @@ export default function DamagePage() {
                 defStats={defStats!}
                 defTypes={defTypes}
                 atkTypes={atkTypes}
+                atkAtkStage={atkAtkStage}
+                atkSpaStage={atkSpaStage}
+                defDefStage={defDefStage}
+                defSpdStage={defSpdStage}
               />
             ))}
           </div>

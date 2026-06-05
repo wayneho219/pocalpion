@@ -31,6 +31,12 @@ export function calcAllStats(base: StatSet, sp: SP, nature: string): StatSet {
   };
 }
 
+export function stageMult(stage: number): number {
+  if (stage === 0) return 1.0;
+  if (stage > 0) return (2 + stage) / 2;
+  return 2 / (2 - stage);
+}
+
 export interface DamageResult {
   min: number;
   max: number;

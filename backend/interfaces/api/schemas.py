@@ -72,44 +72,7 @@ class SpeedOut(BaseModel):
     target_speed: int
 
 
-class SurvivalIn(BaseModel):
-    pokemon_id: int
-    nature: str
-    power: int
-    attacker_atk: int
-    is_physical: bool
-    type_multiplier: float
-
-
-class SurvivalResultOut(BaseModel):
-    sp_hp: int
-    sp_def: int
-    total_sp: int
-    final_hp: int
-    final_def: int
-    survived: bool
-
-
-class SurvivalOut(BaseModel):
-    prefer_hp: SurvivalResultOut
-    prefer_def: SurvivalResultOut
-
-
 class RebuildOut(BaseModel):
     count: int
 
 
-class MegaHashOut(BaseModel):
-    suffix: str
-    hash: str
-
-
-class SpriteHashOut(BaseModel):
-    id: int
-    name_en: str
-    name_zh: str
-    name_ja: str
-    types: list[str]
-    hash: str
-    mega: list[MegaHashOut]
-    is_final_evolution: bool

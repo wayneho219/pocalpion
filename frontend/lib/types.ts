@@ -52,25 +52,6 @@ export interface SpeedResult {
   target_speed: number;
 }
 
-export interface SurvivalPlan {
-  sp_hp: number;
-  sp_def: number;
-  total_sp: number;
-  final_hp: number;
-  final_def: number;
-  survived: boolean;
-}
-
-export interface SurvivalResult {
-  prefer_hp: SurvivalPlan;
-  prefer_def: SurvivalPlan;
-}
-
-export interface MegaHashEntry {
-  suffix: string;
-  hash: string;
-}
-
 export interface MoveEntry {
   name_en: string;
   name_zh: string;
@@ -80,13 +61,3 @@ export interface MoveEntry {
   type: string;
 }
 
-export interface SpriteHashEntry {
-  id: number;
-  name_en: string;
-  name_zh: string;
-  name_ja: string;
-  types: string[];
-  hash: string;
-  mega: MegaHashEntry[];
-  is_final_evolution: boolean;
-}

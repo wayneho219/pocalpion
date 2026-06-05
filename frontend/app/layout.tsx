@@ -2,11 +2,19 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LangProvider } from "@/lib/i18n";
 import { Nav } from "@/components/Nav";
-import { ClientWrapper } from "@/components/ClientWrapper";
 
 export const metadata: Metadata = {
-  title: "Pokémon Calc",
-  description: "Pokémon stat calculator",
+  title: "PokeCalc",
+  description: "Pokémon Champions VGC 計算工具",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PokeCalc",
+  },
+  icons: {
+    apple: "/icons/icon-192.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,10 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-TW">
       <body>
         <LangProvider>
-          <ClientWrapper>
-            <Nav />
-            <main className="relative z-[1]">{children}</main>
-          </ClientWrapper>
+          <Nav />
+          <main className="relative z-[1]">{children}</main>
         </LangProvider>
       </body>
     </html>
