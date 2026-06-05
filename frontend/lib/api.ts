@@ -11,7 +11,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-import type { PokemonSearchResult, PokemonDetail, SpeedResult, SurvivalResult, MoveEntry } from "./types";
+import type { PokemonSearchResult, PokemonDetail, SpeedResult, MoveEntry } from "./types";
 
 export const api = {
   searchPokemon: (q: string) =>
@@ -24,11 +24,6 @@ export const api = {
     my_pokemon_id: number; my_nature: string; my_modifier_mult: number;
     tgt_pokemon_id: number; tgt_nature: string; tgt_modifier_mult: number; tgt_sp: number;
   }) => request<SpeedResult | null>("/api/speed", { method: "POST", body: JSON.stringify(body) }),
-
-  calcSurvival: (body: {
-    pokemon_id: number; nature: string;
-    power: number; attacker_atk: number; is_physical: boolean; type_multiplier: number;
-  }) => request<SurvivalResult>("/api/survival", { method: "POST", body: JSON.stringify(body) }),
 
   rebuild: () =>
     request<{ count: number }>("/api/admin/rebuild", { method: "POST" }),

@@ -72,29 +72,6 @@ class SpeedOut(BaseModel):
     target_speed: int
 
 
-class SurvivalIn(BaseModel):
-    pokemon_id: int
-    nature: str
-    power: int
-    attacker_atk: int
-    is_physical: bool
-    type_multiplier: float
-
-
-class SurvivalResultOut(BaseModel):
-    sp_hp: int
-    sp_def: int
-    total_sp: int
-    final_hp: int
-    final_def: int
-    survived: bool
-
-
-class SurvivalOut(BaseModel):
-    prefer_hp: SurvivalResultOut
-    prefer_def: SurvivalResultOut
-
-
 class RebuildOut(BaseModel):
     count: int
 

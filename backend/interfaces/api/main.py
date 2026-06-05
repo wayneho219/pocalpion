@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from interfaces.api.routers import pokemon, speed, survival, admin, moves
+from interfaces.api.routers import pokemon, speed, admin, moves
 
 app = FastAPI(title="PokéCalc API", version="1.0.0")
 
@@ -19,6 +19,5 @@ app.add_middleware(
 
 app.include_router(pokemon.router, prefix="/api/pokemon", tags=["pokemon"])
 app.include_router(speed.router, prefix="/api/speed", tags=["speed"])
-app.include_router(survival.router, prefix="/api/survival", tags=["survival"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(moves.router, prefix="/api/moves", tags=["moves"])
