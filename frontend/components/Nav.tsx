@@ -60,13 +60,13 @@ export function Nav() {
   const pathname = usePathname();
 
   const tabs = [
-    { href: "/",         key: "nav_search" },
-    { href: "/speed",    key: "nav_speed" },
-    { href: "/survival", key: "nav_survival" },
+    { href: "/",       key: "nav_search" },
+    { href: "/damage", key: "nav_damage" },
+    { href: "/speed",  key: "nav_speed" },
   ];
 
   return (
-    <nav className="sticky top-0 z-10 flex items-center justify-between
+    <nav className="sticky top-0 z-10 grid grid-cols-[1fr_auto_1fr] items-center
       px-8 py-3.5 border-b border-white/7 bg-[#0a0e1a]/90 backdrop-blur-md">
       <span className="text-[17px] font-extrabold uppercase tracking-widest
         bg-gradient-to-r from-red-500 to-amber-400 bg-clip-text text-transparent">
@@ -89,7 +89,9 @@ export function Nav() {
         ))}
       </div>
 
-      <LangDropdown lang={lang} setLang={setLang} />
+      <div className="flex justify-end">
+        <LangDropdown lang={lang} setLang={setLang} />
+      </div>
     </nav>
   );
 }

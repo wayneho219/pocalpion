@@ -71,6 +71,15 @@ export interface MegaHashEntry {
   hash: string;
 }
 
+export interface MoveEntry {
+  name_en: string;
+  name_zh: string;
+  name_ja: string;
+  power: number | null;
+  category: "physical" | "special" | "status";
+  type: string;
+}
+
 export interface SpriteHashEntry {
   id: number;
   name_en: string;
